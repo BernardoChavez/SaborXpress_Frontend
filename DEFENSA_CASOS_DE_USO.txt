@@ -1,0 +1,94 @@
+================================================================================
+GUÍA DE DEFENSA DEL PROYECTO SABORXPRESS (BACKEND Y FRONTEND)
+================================================================================
+
+A continuación, se detalla todo lo implementado separado por los distintos "Casos de Uso". 
+Esta guía te servirá para saber exactamente a qué archivo ir en el código 
+(en Laravel y en React) si el docente te solicita mostrar alguna funcionalidad específica durante la defensa.
+
+--------------------------------------------------------------------------------
+1. CASOS DE USO ASOCIADOS A SEGURIDAD (Login / Logout / Permisos)
+--------------------------------------------------------------------------------
+📝 DESCRIPCIÓN: Permite a los usuarios acceder al sistema verificando sus credenciales, emitiendo un Token de acceso (con Sanctum) y determinando su Rol para proteger las rutas.
+
+🔹 EN EL BACKEND (Laravel):
+- Rutas (Endpoints): `routes/api.php`
+  * POST /api/login
+  * POST /api/logout
+- Controlador: `app/Http/Controllers/AuthController.php` (Métodos login y logout).
+- Protección (Middleware): Uso de Laravel Sanctum y protección a través de "abilities" (`auth:sanctum`).
+
+🔹 EN EL FRONTEND (React):
+- Pantalla (Vista): `src/modules/auth/pages/LoginPage.tsx`
+- Servicio (Llama a la API): `src/api/services/authService.ts`
+- Estado Global (Guarda Token y Rol): `src/core/store/useAuthStore.ts` (Hecho con la librería Zustand).
+- Rutas Protegidas: `src/core/router/router.tsx` y `src/shared/components/ProtectedRoute.tsx`
+
+--------------------------------------------------------------------------------
+2. CASOS DE USO: GESTIÓN DE USUARIOS (CRUD Roles, Personas, Empleados)
+--------------------------------------------------------------------------------
+📝 DESCRIPCIÓN: CRUD Completo. Permite a los Administradores registrar nuevas personas en el sistema, asignarles un rol (como Admin, Cajero o Cocinero), modificar sus datos y eliminarlos. En el backend se usan transacciones de base de datos para guardar a la vez en Persona, Empleado y Usuario.
+
+🔹 EN EL BACKEND (Laravel):
+- Rutas (Endpoints): `routes/api.php` 
+  * GET, POST, PUT, DELETE /api/usuarios
+- Controlador: `app/Http/Controllers/UsuarioController.php` (Usa `DB::transaction()` para prevenir errores o registros a medias).
+- Modelos Relacionados: `app/Models/Usuario.php`, `app/Models/Persona.php`, `app/Models/Empleado.php`
+
+🔹 EN EL FRONTEND (React):
+- Pantalla Principal (Listado): `src/modules/usuarios/pages/UsuariosPage.tsx`
+- Componente Tabla: `src/modules/usuarios/components/UsuariosTable.tsx`
+- Componente Resumen (Cartas por Rol): `src/modules/usuarios/components/RoleCards.tsx`
+- Formulario de Registro/Edición: `src/modules/usuarios/components/UsuarioModal.tsx`
+- Servicio (Llama a la API): `src/modules/usuarios/usuarioService.ts`
+
+--------------------------------------------------------------------------------
+3. CASOS DE USO: GESTIÓN DE CATÁLOGO (Categorías y Productos)
+--------------------------------------------------------------------------------
+📝 DESCRIPCIÓN: CRUD para la administración del menú. Los administradores pueden crear, editar y eliminar categorías y productos. 
+
+🔹 EN EL BACKEND (Laravel):
+- Rutas (Endpoints): `routes/api.php`
+  * GET, POST, PUT, DELETE /api/productos
+  * GET, POST, PUT, DELETE /api/categorias
+- Controladores: 
+  * `app/Http/Controllers/ProductoController.php`
+  * `app/Http/Controllers/CategoriaController.php`
+- Modelos: `app/Models/Producto.php`, `app/Models/Categoria.php`
+
+🔹 EN EL FRONTEND (React):
+- Vista Principal: `src/modules/catalogo/pages/CatalogoPage.tsx`
+- Formulario de Categorías: `src/modules/catalogo/components/CategoriaModal.tsx`
+- Formulario de Productos: `src/modules/catalogo/components/ProductoModal.tsx`
+- Confirmación para Eliminar: `src/modules/catalogo/components/CatalogoDeleteModal.tsx`
+- Servicio (Llama a la API): `src/modules/catalogo/catalogoService.ts`
+
+--------------------------------------------------------------------------------
+4. CASO DE USO: BITÁCORA DEL SISTEMA (Auditoría e Historial)
+--------------------------------------------------------------------------------
+📝 DESCRIPCIÓN: El sistema guarda un registro de las acciones clave que realizan los usuarios autenticados (quién hizo qué y en qué fecha) para mantener control y trazabilidad (Auditoría).
+
+🔹 EN EL BACKEND (Laravel):
+- Rutas (Endpoints Protegidos para visualizar): `routes/api.php`
+  * GET /api/bitacora
+- Controlador: `app/Http/Controllers/BitacoraController.php`
+- Generación de Bitácora: Cuentas con un Middleware que intercepta cada acción realizada y la inserta automáticamente asociado al modelo `Bitacora`.
+- Modelo: `app/Models/Bitacora.php`
+
+🔹 EN EL FRONTEND (React):
+- Vista (Tabla de Auditoría): `src/modules/bitacora/pages/BitacoraPage.tsx`
+- Servicio para leer los datos: `src/modules/bitacora/bitacoraService.ts`
+
+--------------------------------------------------------------------------------
+💡 TIPS RÁPIDOS PARA LA DEFENSA 💡
+--------------------------------------------------------------------------------
+• "Mostrame dónde conectas la base de datos": 
+   => Vas al archivo: BACKEND -> `saborxpress-backend/.env` (o `config/database.php`).
+• "Mostrame cómo pasás el Token en las peticiones del frontend": 
+   => Vas al archivo: FRONTEND -> `src/api/axios.ts` (Interceptor de requests).
+• "Mostrame las tablas de la BD en código":
+   => Vas a las carpetas: BACKEND -> `database/migrations/`
+• "¿Dónde configuras las reglas estilísticas globales?":
+   => Vas al archivo: FRONTEND -> `src/index.css` (Tailwind config).
+• "Mostrame la pantalla inicial tras el login":
+   => Vas a los componentes: FRONTEND -> `src/modules/dashboard/pages/DashboardPage.tsx`

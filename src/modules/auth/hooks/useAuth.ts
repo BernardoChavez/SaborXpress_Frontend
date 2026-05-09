@@ -26,5 +26,12 @@ export const useAuth = () => {
     }
   };
 
-  return { user, token, tipo_usuario, isAuthenticated, login, logout };
+  const register = async (userData: { nombre: string; correo: string; contrasena: string; telefono?: string }) => {
+    const data = await authApi.register(userData);
+    setAuth(data.user, data.token);
+    navigate('/');
+    return data;
+  };
+
+  return { user, token, tipo_usuario, isAuthenticated, login, logout, register };
 };

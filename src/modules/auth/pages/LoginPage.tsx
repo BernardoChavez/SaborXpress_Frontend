@@ -1,9 +1,11 @@
 import { useState } from 'react';
 import axios from 'axios';
 import { parseApiError } from '../../../utils/parseApiError';
+import { useNavigate } from 'react-router-dom';
 import { useAuth } from '../hooks/useAuth';
 
 const LoginPage = () => {
+  const navigate = useNavigate();
   const { login } = useAuth();
   const [correo, setCorreo] = useState('');
   const [contrasena, setContrasena] = useState('');
@@ -103,9 +105,16 @@ const LoginPage = () => {
             {loading ? 'Iniciando sesión...' : 'Iniciar sesión'}
           </button>
         </form>
+          <div className="mt-4 text-center space-y-3">
+            <button onClick={() => navigate('/recuperar')} className="text-sm font-medium text-orange-500 hover:text-orange-600 block w-full">¿Olvidaste tu contraseña?</button>
+            <div className="pt-4 border-t border-gray-100">
+              <p className="text-sm text-gray-500">¿No tienes cuenta? <button onClick={() => navigate('/registro')} className="font-bold text-orange-600 hover:text-orange-500">Regístrate aquí</button></p>
+            </div>
+          </div>
       </div>
     </div>
   );
 };
 
 export default LoginPage;
+

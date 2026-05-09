@@ -14,6 +14,12 @@ import {
   UtensilsCrossed,
   Menu,
   X,
+  Building2,
+  ShieldAlert,
+  Package,
+  Store,
+  ChefHat,
+  Wallet,
 } from 'lucide-react';
 import type { TipoUsuario } from '../../core/types/auth.types';
 
@@ -26,9 +32,15 @@ interface NavItem {
 
 const navItems: NavItem[] = [
   { label: 'Dashboard',   to: '/',                icon: <LayoutDashboard size={20} /> },
+  { label: 'Venta (POS)', to: '/pos',             icon: <Store size={20} /> },
+  { label: 'Caja',        to: '/caja',            icon: <Wallet size={20} /> },
+  { label: 'Cocina',      to: '/cocina',          icon: <ChefHat size={20} /> },
   { label: 'Catálogo',    to: '/admin/catalogo',   icon: <UtensilsCrossed size={20} />, adminOnly: true },
   { label: 'Usuarios',    to: '/admin/usuarios',   icon: <Users size={20} />,           adminOnly: true },
   { label: 'Bitácora',    to: '/admin/bitacora',   icon: <ScrollText size={20} />,      adminOnly: true },
+  { label: 'Empresa',     to: '/admin/empresa',    icon: <Building2 size={20} />,       adminOnly: true },
+  { label: 'Inventario',  to: '/admin/inventario', icon: <Package size={20} />,         adminOnly: true },
+  { label: 'Roles',       to: '/admin/roles',      icon: <ShieldAlert size={20} />,     adminOnly: true },
 ];
 
 interface SidebarProps {
@@ -203,3 +215,4 @@ const Sidebar = ({ tipoUsuario }: SidebarProps) => {
 };
 
 export default Sidebar;
+

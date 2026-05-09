@@ -1,10 +1,34 @@
 import { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Lock, ShieldCheck, Loader2 } from 'lucide-react';
+import { X, User, Mail, Phone, Lock, ShieldCheck, Loader2, CheckCircle2, Circle } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { parseApiError } from '../../../utils/parseApiError';
 import type { Usuario, CreateUsuarioDto, TipoUsuarioSistema } from '../types/usuario.types';
 
 const ROLES: TipoUsuarioSistema[] = ['Admin', 'Cajero', 'Cocinero'];
+
+const PasswordValidator = ({ password }: { password: string }) => {
+  if (!password) return null;
+  const requirements = [
+    { label: '8+ caracteres', test: password.length >= 8 },
+    { label: 'Mayúscula', test: /[A-Z]/.test(password) },
+    { label: 'Minúscula', test: /[a-z]/.test(password) },
+    { label: 'Número', test: /[0-9]/.test(password) },
+    { label: 'Símbolo', test: /[^A-Za-z0-9]/.test(password) },
+  ];
+
+  return (
+    <div className="grid grid-cols-2 gap-2 mt-2 p-2 bg-gray-50 rounded-lg border border-gray-100">
+      {requirements.map((req, i) => (
+        <div key={i} className={`flex items-center gap-1.5 transition-all duration-300 ${req.test ? 'text-green-600' : 'text-gray-400'}`}>
+          {req.test ? <CheckCircle2 size={10} className="shrink-0" /> : <Circle size={10} className="shrink-0" />}
+          <span className={`text-[9px] font-bold uppercase tracking-tight ${req.test ? 'opacity-100' : 'opacity-60'}`}>
+            {req.label}
+          </span>
+        </div>
+      ))}
+    </div>
+  );
+};
 
 interface FormData {
   nombre: string;
@@ -208,6 +232,7 @@ const UsuarioModal = ({ open, usuario, onClose, onSubmit }: UsuarioModalProps) =
                     onChange={(v) => handleChange('contrasena', v)}
                     error={errors.contrasena}
                   />
+                  <PasswordValidator password={form.contrasena} />
 
                   {/* Rol */}
                   <div>
