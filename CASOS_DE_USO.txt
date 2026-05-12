@@ -125,3 +125,4 @@ RESUMEN RÁPIDO PARA DEMOSTRACIONES:
 
 - Si pide "Mostrame la configuración de red al comunicarse con Laravel":
   * Vas a `src/api/axios.ts`
+
