@@ -12,7 +12,10 @@ import {
   ShieldCheck,
   DoorOpen,
   ArrowRightLeft,
-  Power
+  Power,
+  Scale,
+  CheckCircle2,
+  AlertTriangle
 } from 'lucide-react';
 import { cajaService } from '../services/cajaService';
 import type { Caja } from '../services/cajaService';
@@ -189,27 +192,53 @@ const CajaPage = () => {
             )}
 
             {reporteCierre && (
-                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="bg-gray-900 p-12 rounded-[60px] text-white shadow-3xl relative overflow-hidden">
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-16 relative z-10">
-                        <div className="space-y-6">
-                            <h5 className="text-xs font-black uppercase text-orange-400 tracking-widest flex items-center gap-2"><Banknote size={16}/> Arqueo Efectivo</h5>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between text-gray-400 font-medium"><span>Base + Ventas:</span> <span>Bs. {Number(reporteCierre.monto_esperado_fisico).toLocaleString()}</span></div>
-                                <div className="flex justify-between font-bold border-t border-white/10 pt-2 text-white"><span>Físico Real:</span> <span>Bs. {Number(reporteCierre.monto_real_fisico).toLocaleString()}</span></div>
-                                <div className={`flex justify-between text-3xl font-black pt-4 ${reporteCierre.diferencia_efectivo < 0 ? 'text-red-500' : 'text-green-400'}`}><span>Balance:</span> <span>Bs. {Number(reporteCierre.diferencia_efectivo).toLocaleString()}</span></div>
+                <motion.div initial={{ opacity: 0, y: 30 }} animate={{ opacity: 1, y: 0 }} className="bg-gray-900 p-8 rounded-[50px] text-white shadow-3xl relative overflow-hidden border border-white/5">
+                    <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-center relative z-10">
+                        
+                        {/* Efectivo */}
+                        <div className="lg:col-span-4 space-y-4 p-6 bg-white/5 rounded-3xl border border-white/5">
+                            <div className="flex items-center gap-2 text-orange-400 mb-2">
+                                <Banknote size={16}/><h5 className="text-[10px] font-black uppercase tracking-widest">Arqueo Efectivo</h5>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-[10px] text-gray-400 font-bold uppercase"><span>Esperado</span> <span>Bs. {Number(reporteCierre.monto_esperado_fisico).toLocaleString()}</span></div>
+                                <div className="flex justify-between text-[10px] text-gray-400 font-bold uppercase"><span>Físico Real</span> <span>Bs. {Number(reporteCierre.monto_real_fisico).toLocaleString()}</span></div>
+                                <div className={`flex justify-between items-center pt-2 border-t border-white/10 ${reporteCierre.diferencia_efectivo < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                    <span className="text-[10px] font-black uppercase">Balance</span>
+                                    <span className="text-2xl font-black">Bs. {Number(reporteCierre.diferencia_efectivo).toLocaleString()}</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="space-y-6">
-                            <h5 className="text-xs font-black uppercase text-indigo-400 tracking-widest flex items-center gap-2"><QrCode size={16}/> Arqueo QR (Banco)</h5>
-                            <div className="space-y-3 text-sm">
-                                <div className="flex justify-between text-gray-400 font-medium"><span>Base + Ventas:</span> <span>Bs. {Number(reporteCierre.monto_esperado_qr).toLocaleString()}</span></div>
-                                <div className="flex justify-between font-bold border-t border-white/10 pt-2 text-white"><span>Banco Real:</span> <span>Bs. {Number(reporteCierre.monto_real_qr).toLocaleString()}</span></div>
-                                <div className={`flex justify-between text-3xl font-black pt-4 ${reporteCierre.diferencia_qr < 0 ? 'text-red-500' : 'text-green-400'}`}><span>Balance:</span> <span>Bs. {Number(reporteCierre.diferencia_qr).toLocaleString()}</span></div>
+
+                        {/* QR */}
+                        <div className="lg:col-span-4 space-y-4 p-6 bg-white/5 rounded-3xl border border-white/5">
+                            <div className="flex items-center gap-2 text-indigo-400 mb-2">
+                                <QrCode size={16}/><h5 className="text-[10px] font-black uppercase tracking-widest">Arqueo QR (Banco)</h5>
+                            </div>
+                            <div className="space-y-2">
+                                <div className="flex justify-between text-[10px] text-gray-400 font-bold uppercase"><span>Esperado</span> <span>Bs. {Number(reporteCierre.monto_esperado_qr).toLocaleString()}</span></div>
+                                <div className="flex justify-between text-[10px] text-gray-400 font-bold uppercase"><span>Banco Real</span> <span>Bs. {Number(reporteCierre.monto_real_qr).toLocaleString()}</span></div>
+                                <div className={`flex justify-between items-center pt-2 border-t border-white/10 ${reporteCierre.diferencia_qr < 0 ? 'text-red-400' : 'text-green-400'}`}>
+                                    <span className="text-[10px] font-black uppercase">Balance</span>
+                                    <span className="text-2xl font-black">Bs. {Number(reporteCierre.diferencia_qr).toLocaleString()}</span>
+                                </div>
                             </div>
                         </div>
-                        <div className="bg-white/5 p-10 rounded-[40px] border border-white/10 flex flex-col justify-center items-center text-center backdrop-blur-xl">
-                            <ArrowRightLeft size={48} className="mb-6 text-blue-400 drop-shadow-[0_0_15px_rgba(96,165,250,0.5)]" /><p className="text-xs font-bold text-gray-400 uppercase mb-1 tracking-widest">Utilidad Real del Turno</p><p className="text-6xl font-black italic tracking-tighter text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-400">Bs. {Number(reporteCierre.total_ingresos).toLocaleString()}</p>
+
+                        {/* Utilidad Central */}
+                        <div className="lg:col-span-4 bg-gradient-to-br from-blue-600/20 to-indigo-600/20 p-8 rounded-[40px] border border-white/10 backdrop-blur-xl flex flex-col items-center justify-center text-center">
+                            <div className="w-12 h-12 bg-blue-500/20 rounded-2xl flex items-center justify-center text-blue-400 mb-4 shadow-lg shadow-blue-500/10">
+                                <TrendingUp size={24} />
+                            </div>
+                            <p className="text-[10px] font-black text-gray-400 uppercase tracking-[0.2em] mb-1">Utilidad Real Turno</p>
+                            <h4 className="text-5xl font-black text-transparent bg-clip-text bg-gradient-to-r from-blue-400 to-indigo-300 tracking-tighter">
+                                Bs. {Number(reporteCierre.total_ingresos).toLocaleString()}
+                            </h4>
+                            <div className="mt-4 flex items-center gap-2 px-4 py-1.5 bg-green-500/10 text-green-400 rounded-full text-[9px] font-black uppercase tracking-widest">
+                                <CheckCircle2 size={12}/> Turno Conciliado
+                            </div>
                         </div>
+
                     </div>
                 </motion.div>
             )}

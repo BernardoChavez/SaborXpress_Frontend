@@ -1,7 +1,31 @@
 import React, { useEffect, useState } from 'react';
-import { ShieldAlert, ChevronDown, FolderOpen, Folder, CheckSquare } from 'lucide-react';
+import { 
+  ShieldAlert, 
+  ChevronDown, 
+  FolderOpen, 
+  Folder, 
+  CheckSquare, 
+  ShieldCheck, 
+  Users, 
+  Lock, 
+  Layers, 
+  Zap,
+  Eye,
+  PlusCircle,
+  Edit3,
+  Trash2
+} from 'lucide-react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { rolesService } from '../rolesService';
 import type { Rol, Paquete, PermisoRol, CasoUso } from '../types/roles.types';
+
+const MODULE_COLORS: Record<string, string> = {
+  'Seguridad': 'blue',
+  'Usuarios': 'purple',
+  'Inventarios': 'green',
+  'Ventas': 'orange',
+  'Configuración': 'slate'
+};
 
 const RolesPage = () => {
   const [paquetes, setPaquetes] = useState<Paquete[]>([]);
@@ -41,7 +65,6 @@ const RolesPage = () => {
       : ['puede_ver'];
   };
 
-  // 1. Individual Toggle
   const handleToggleAction = (rolId: number, idCasoUso: number, accion: string) => {
     const rol = roles.find(r => r.id === rolId);
     if (!rol) return;
@@ -60,7 +83,6 @@ const RolesPage = () => {
     savePermisos(rolId, currentPermisos);
   };
 
-  // 2. CU Toggle (Select All for a Use Case)
   const handleToggleCU = (rolId: number, cu: CasoUso) => {
     const rol = roles.find(r => r.id === rolId);
     if (!rol) return;
@@ -86,13 +108,11 @@ const RolesPage = () => {
     savePermisos(rolId, currentPermisos);
   };
 
-  // 3. Package Toggle (Select All for a Package)
   const handleTogglePackage = (rolId: number, paq: Paquete, e: React.MouseEvent) => {
     e.stopPropagation();
     const rol = roles.find(r => r.id === rolId);
     if (!rol) return;
 
-    // Check if ALL actions in ALL CUs of this package are true
     let isAllChecked = true;
     const items = paq.casos_uso || [];
     for (const cu of items) {
@@ -142,172 +162,177 @@ const RolesPage = () => {
     }
   };
 
-  if (loading) return <div className="text-center py-20 animate-pulse text-slate-400">Cargando Matriz...</div>;
+  if (loading) return <div className="h-[70vh] flex items-center justify-center animate-pulse text-blue-500 font-black italic uppercase">Cargando Matriz de Seguridad...</div>;
 
   return (
-    <div className="max-w-6xl mx-auto animate-in fade-in duration-500">
-      <div className="flex flex-col md:flex-row justify-between items-end mb-10 gap-6">
-        <div>
-          <div className="flex items-center gap-2 mb-2">
-            <span className="w-8 h-[2px] bg-blue-600"></span>
-            <span className="text-[10px] font-black text-blue-600 uppercase tracking-[0.3em]">Administración Central</span>
-          </div>
-          <h1 className="text-4xl font-black text-slate-900 tracking-tighter uppercase italic">
-            Matriz de <span className="text-blue-600 underline decoration-4 decoration-blue-100 underline-offset-8">Permisos</span>
-          </h1>
-        </div>
-        
-        <div className="flex gap-1 bg-slate-100 p-1.5 rounded-2xl border border-slate-200 shadow-inner">
-          {roles.map(r => (
-            <div key={r.id} className={`flex items-center gap-2 px-4 py-2 rounded-xl transition-all ${r.nombre === 'Admin' ? 'bg-white shadow-sm border border-slate-200' : ''}`}>
-              <div className={`w-1.5 h-1.5 rounded-full ${r.nombre === 'Admin' ? 'bg-slate-900' : (r.nombre === 'Cajero' ? 'bg-amber-500' : 'bg-blue-500')}`}></div>
-              <span className="text-[9px] font-black text-slate-600 uppercase tracking-widest">{r.nombre}</span>
+    <div className="max-w-7xl mx-auto space-y-10 pb-20">
+      
+      {/* Header Premium */}
+      <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-8">
+        <div className="space-y-2">
+            <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-blue-600 rounded-xl flex items-center justify-center text-white shadow-lg shadow-blue-200"><Lock size={20}/></div>
+                <h1 className="text-4xl font-black text-gray-900 tracking-tighter uppercase italic">Matriz de <span className="text-blue-600">Permisos</span></h1>
             </div>
-          ))}
+            <p className="text-gray-500 font-medium ml-1">Administración centralizada de accesos y casos de uso del sistema.</p>
+        </div>
+
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-3 bg-gray-50 p-2 rounded-[32px] border border-gray-100 shadow-inner">
+            {roles.map(r => (
+                <div key={r.id} className="bg-white px-5 py-3 rounded-2xl border border-gray-100 shadow-sm flex items-center gap-3">
+                    <div className={`w-2.5 h-2.5 rounded-full ${r.nombre === 'Admin' ? 'bg-blue-600' : (r.nombre === 'Cajero' ? 'bg-orange-500' : 'bg-green-500')}`} />
+                    <div>
+                        <p className="text-[10px] font-black text-gray-400 uppercase tracking-widest leading-none mb-1">ROL</p>
+                        <p className="text-xs font-black text-gray-800 uppercase">{r.nombre}</p>
+                    </div>
+                </div>
+            ))}
         </div>
       </div>
 
-      <div className="space-y-4">
-        {paquetes.map(mod => (
-          <div key={mod.id} className="bg-white rounded-[2rem] border border-slate-200 overflow-hidden transition-all">
-            
-            {/* Header del Paquete */}
-            <div onClick={() => togglePaquete(mod.id)} className="p-6 flex flex-col md:flex-row md:items-center justify-between cursor-pointer hover:bg-slate-50 transition-colors gap-4">
-              <div className="flex items-center gap-6">
-                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center transition-all border border-slate-100 ${expandedPaquete === mod.id ? 'bg-slate-900 text-white' : 'bg-white text-slate-400'}`}>
-                  {expandedPaquete === mod.id ? <FolderOpen size={20} /> : <Folder size={20} />}
-                </div>
-                <div>
-                  <h2 className="text-sm font-black text-slate-800 uppercase tracking-widest">{mod.nombre}</h2>
-                  <span className="text-[9px] font-bold text-slate-400 uppercase tracking-widest">{(mod.casos_uso || []).length} Casos de Uso</span>
-                </div>
-              </div>
-              
-              <div className="flex items-center gap-4">
-                {/* Toggles del paquete por Rol */}
-                <div className="hidden md:flex gap-4 mr-6 border-r border-slate-200 pr-6">
-                  {roles.map(rol => {
-                    // check if all granted for this rol
-                    let isAllChecked = true;
-                    const items = mod.casos_uso || [];
-                    for (const cu of items) {
-                      const p = getPermiso(rol, cu.id);
-                      if (!getAccionesForCU(cu).every(a => (p as any)[a])) { isAllChecked = false; break; }
-                    }
-                    return (
-                      <div key={rol.id} className="flex flex-col items-center gap-1" onClick={e => e.stopPropagation()}>
-                        <span className="text-[8px] font-bold text-slate-400 uppercase">{rol.nombre}</span>
-                        <label className="relative inline-flex items-center cursor-pointer">
-                          <input type="checkbox" checked={isAllChecked} onChange={(e) => handleTogglePackage(rol.id, mod, e as any)} className="sr-only peer" />
-                          <div className="w-7 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-slate-800"></div>
-                        </label>
-                      </div>
-                    );
-                  })}
+      {/* Matriz Agrupada por Paquetes */}
+      <div className="space-y-6">
+        {paquetes.map(paq => {
+          const color = MODULE_COLORS[paq.nombre] || 'slate';
+          const isExpanded = expandedPaquete === paq.id;
+          
+          return (
+            <motion.div 
+              key={paq.id} 
+              layout
+              className={`bg-white rounded-[40px] border border-gray-100 shadow-sm overflow-hidden transition-all duration-300 ${isExpanded ? 'shadow-2xl border-blue-100 ring-1 ring-blue-50' : 'hover:border-gray-200'}`}
+            >
+              {/* Header del Modulo */}
+              <div 
+                onClick={() => togglePaquete(paq.id)}
+                className={`p-6 md:p-8 flex flex-col md:flex-row items-center justify-between cursor-pointer transition-all ${isExpanded ? 'bg-blue-50/30' : 'hover:bg-gray-50/50'}`}
+              >
+                <div className="flex items-center gap-6">
+                    <div className={`w-14 h-14 rounded-2xl flex items-center justify-center transition-all shadow-lg ${isExpanded ? 'bg-blue-600 text-white shadow-blue-200' : 'bg-gray-100 text-gray-400 shadow-gray-100'}`}>
+                        {isExpanded ? <FolderOpen size={24}/> : <Folder size={24}/>}
+                    </div>
+                    <div>
+                        <h2 className="text-xl font-black text-gray-900 uppercase tracking-tight italic">{paq.nombre}</h2>
+                        <div className="flex items-center gap-2 text-[10px] font-bold text-gray-400 uppercase tracking-widest mt-1">
+                            <Layers size={12}/> {paq.casos_uso?.length || 0} FUNCIONALIDADES
+                        </div>
+                    </div>
                 </div>
 
-                <div className={`w-8 h-8 rounded-full border border-slate-200 flex items-center justify-center transition-transform duration-300 ${expandedPaquete === mod.id ? 'rotate-180' : ''}`}>
-                  <ChevronDown className="text-slate-400" size={16} />
-                </div>
-              </div>
-            </div>
-
-            {/* Tabla Interna */}
-            {expandedPaquete === mod.id && (
-              <div className="border-t border-slate-100 animate-in fade-in slide-in-from-top-4">
-                <div className="overflow-x-auto">
-                  <table className="w-full text-left">
-                    <thead className="bg-slate-50/50">
-                      <tr>
-                        <th className="px-8 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/3">Caso de Uso</th>
-                        <th className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest w-1/4">Acción</th>
-                        {roles.map(r => (
-                          <th key={r.id} className="px-4 py-4 text-[10px] font-black text-slate-400 uppercase tracking-widest text-center">{r.nombre}</th>
-                        ))}
-                      </tr>
-                    </thead>
-                    <tbody className="divide-y divide-slate-100">
-                      {(mod.casos_uso || []).map(cu => {
-                        const acciones = cu.es_crud 
-                          ? [{k:'puede_ver', l:'Ver / Listar (R)'}, {k:'puede_crear', l:'Crear Nuevo (C)'}, {k:'puede_editar', l:'Editar (U)'}, {k:'puede_eliminar', l:'Eliminar (D)'}] 
-                          : [{k:'puede_ver', l:'Acceder / Ver'}];
-                        
-                        return (
-                          <React.Fragment key={cu.id}>
-                            {/* Fila Principal (Toggle CU) */}
-                            <tr className="bg-slate-50/30 border-b-2 border-slate-100">
-                              <td className="px-8 py-3 align-middle font-black text-slate-800 text-xs uppercase tracking-tighter">
-                                {cu.nombre}
-                              </td>
-                              <td className="px-4 py-3 align-middle">
-                                <span className="text-[10px] font-bold text-slate-400 uppercase bg-slate-100 px-2 py-1 rounded-md">
-                                  Marcar Todos
-                                </span>
-                              </td>
-                              {roles.map(rol => {
+                <div className="flex items-center gap-8 mt-6 md:mt-0">
+                    <div className="flex gap-4 border-r border-gray-200 pr-8">
+                        {roles.map(rol => {
+                            let isAllChecked = true;
+                            const items = paq.casos_uso || [];
+                            for (const cu of items) {
                                 const p = getPermiso(rol, cu.id);
-                                const isAllChecked = getAccionesForCU(cu).every(a => (p as any)[a]);
-                                return (
-                                  <td key={rol.id} className="px-4 py-3 text-center align-middle border-l border-slate-50">
-                                    <label className="relative inline-flex items-center cursor-pointer group justify-center">
-                                      <input type="checkbox" checked={isAllChecked} onChange={() => handleToggleCU(rol.id, cu)} className="sr-only peer" />
-                                      <div className="w-5 h-5 bg-slate-200 rounded border border-slate-300 peer-checked:bg-blue-600 peer-checked:border-blue-600 flex items-center justify-center transition-colors">
-                                        <CheckSquare className={`w-3.5 h-3.5 text-white ${isAllChecked ? 'opacity-100' : 'opacity-0'} transition-opacity`} strokeWidth={3} />
-                                      </div>
+                                if (!getAccionesForCU(cu).every(a => (p as any)[a])) { isAllChecked = false; break; }
+                            }
+                            return (
+                                <div key={rol.id} className="flex flex-col items-center gap-1.5" onClick={e => e.stopPropagation()}>
+                                    <span className="text-[9px] font-black text-gray-400 uppercase">{rol.nombre}</span>
+                                    <label className="relative inline-flex items-center cursor-pointer">
+                                        <input type="checkbox" checked={isAllChecked} onChange={(e) => handleTogglePackage(rol.id, paq, e as any)} className="sr-only peer" />
+                                        <div className={`w-9 h-5 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-4 after:w-4 after:transition-all ${rol.nombre === 'Admin' ? 'peer-checked:bg-blue-600' : 'peer-checked:bg-orange-500'}`}></div>
                                     </label>
-                                  </td>
-                                );
-                              })}
-                            </tr>
-
-                            {/* Filas de Acciones (CRUD) */}
-                            {acciones.map(acc => (
-                              <tr key={`${cu.id}-${acc.k}`} className="hover:bg-blue-50/10 transition-colors">
-                                <td className="px-8 py-2 border-r border-slate-50"></td>
-                                <td className="px-4 py-2">
-                                  <div className="flex items-center gap-2">
-                                    <div className="w-1 h-1 rounded-full bg-slate-400"></div>
-                                    <span className="text-[11px] font-bold text-slate-600 uppercase tracking-tight">{acc.l}</span>
-                                  </div>
-                                </td>
-                                {roles.map(rol => {
-                                  const p = getPermiso(rol, cu.id);
-                                  const checked = (p as any)[acc.k];
-                                  return (
-                                    <td key={rol.id} className="px-4 py-2 text-center border-l border-slate-50">
-                                      <label className="relative inline-flex items-center cursor-pointer group justify-center">
-                                        <input type="checkbox" checked={checked} onChange={() => handleToggleAction(rol.id, cu.id, acc.k)} className="sr-only peer" />
-                                        <div className="w-8 h-4 bg-slate-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all peer-checked:bg-blue-500"></div>
-                                      </label>
-                                    </td>
-                                  );
-                                })}
-                              </tr>
-                            ))}
-                          </React.Fragment>
-                        );
-                      })}
-                    </tbody>
-                  </table>
+                                </div>
+                            );
+                        })}
+                    </div>
+                    <div className={`w-10 h-10 rounded-full border-2 border-gray-100 flex items-center justify-center text-gray-300 transition-all ${isExpanded ? 'rotate-180 bg-white text-blue-600 border-blue-100 shadow-sm' : ''}`}>
+                        <ChevronDown size={20}/>
+                    </div>
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+
+              {/* Detalle de Casos de Uso */}
+              <AnimatePresence>
+                {isExpanded && (
+                  <motion.div 
+                    initial={{ height: 0, opacity: 0 }} 
+                    animate={{ height: 'auto', opacity: 1 }} 
+                    exit={{ height: 0, opacity: 0 }}
+                    className="overflow-hidden bg-white"
+                  >
+                    <div className="p-8 border-t border-gray-50 space-y-6">
+                        {paq.casos_uso?.map(cu => {
+                            const acciones = cu.es_crud 
+                            ? [{k:'puede_ver', l:'Ver', i:<Eye size={12}/>}, {k:'puede_crear', l:'Crear', i:<PlusCircle size={12}/>}, {k:'puede_editar', l:'Editar', i:<Edit3 size={12}/>}, {k:'puede_eliminar', l:'Borrar', i:<Trash2 size={12}/>}] 
+                            : [{k:'puede_ver', l:'Acceso General', i:<Zap size={12}/>}];
+
+                            return (
+                                <div key={cu.id} className="bg-gray-50/50 p-6 rounded-[32px] border border-gray-100 hover:border-blue-100 transition-all group">
+                                    <div className="flex flex-col xl:flex-row justify-between items-start xl:items-center gap-6">
+                                        <div className="space-y-1">
+                                            <div className="flex items-center gap-2">
+                                                <div className="w-2 h-2 rounded-full bg-blue-500" />
+                                                <h4 className="text-sm font-black text-gray-800 uppercase tracking-tight">{cu.nombre}</h4>
+                                            </div>
+                                            <p className="text-[10px] text-gray-400 font-bold uppercase tracking-widest ml-4">ID: {cu.codigo}</p>
+                                        </div>
+
+                                        <div className="flex-1 flex flex-wrap gap-8 justify-end">
+                                            {roles.map(rol => {
+                                                const p = getPermiso(rol, cu.id);
+                                                const isAllChecked = getAccionesForCU(cu).every(a => (p as any)[a]);
+
+                                                return (
+                                                    <div key={rol.id} className="space-y-3 p-4 bg-white rounded-2xl border border-gray-100 shadow-sm min-w-[140px]">
+                                                        <div className="flex items-center justify-between border-b border-gray-50 pb-2 mb-2">
+                                                            <span className="text-[9px] font-black text-gray-400 uppercase">{rol.nombre}</span>
+                                                            <button 
+                                                                onClick={() => handleToggleCU(rol.id, cu)}
+                                                                className={`p-1 rounded-lg transition-all ${isAllChecked ? 'bg-blue-600 text-white' : 'bg-gray-100 text-gray-300'}`}
+                                                            >
+                                                                <CheckSquare size={14} />
+                                                            </button>
+                                                        </div>
+                                                        <div className="space-y-2">
+                                                            {acciones.map(acc => {
+                                                                const checked = (p as any)[acc.k];
+                                                                return (
+                                                                    <div key={acc.k} className="flex items-center justify-between gap-4">
+                                                                        <div className={`flex items-center gap-1.5 ${checked ? 'text-gray-900' : 'text-gray-300'}`}>
+                                                                            {acc.i} <span className="text-[10px] font-black uppercase tracking-tighter">{acc.l}</span>
+                                                                        </div>
+                                                                        <label className="relative inline-flex items-center cursor-pointer scale-75">
+                                                                            <input type="checkbox" checked={checked} onChange={() => handleToggleAction(rol.id, cu.id, acc.k)} className="sr-only peer" />
+                                                                            <div className={`w-7 h-4 bg-gray-200 rounded-full peer peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:start-[2px] after:bg-white after:rounded-full after:h-3 after:w-3 after:transition-all ${rol.nombre === 'Admin' ? 'peer-checked:bg-blue-600' : 'peer-checked:bg-orange-500'}`}></div>
+                                                                        </label>
+                                                                    </div>
+                                                                );
+                                                            })}
+                                                        </div>
+                                                    </div>
+                                                );
+                                            })}
+                                        </div>
+                                    </div>
+                                </div>
+                            );
+                        })}
+                    </div>
+                  </motion.div>
+                )}
+              </AnimatePresence>
+            </motion.div>
+          );
+        })}
       </div>
 
-      <div className="mt-12 p-8 bg-slate-900 rounded-[2.5rem] text-white flex flex-col md:flex-row items-center gap-6">
-        <div className="w-16 h-16 bg-blue-600 rounded-2xl flex items-center justify-center shadow-xl shadow-blue-600/20">
-          <ShieldAlert size={28} />
+      {/* Footer de Auditoría */}
+      <div className="p-10 bg-gray-900 rounded-[50px] text-white shadow-2xl relative overflow-hidden flex flex-col md:flex-row items-center gap-8">
+        <div className="absolute top-0 right-0 p-20 bg-blue-600/10 rounded-full blur-3xl -mr-20 -mt-20" />
+        <div className="w-20 h-20 bg-blue-600 rounded-[30px] flex items-center justify-center text-white shadow-2xl shadow-blue-500/20 z-10 relative">
+            <ShieldAlert size={36}/>
         </div>
-        <div className="text-center md:text-left flex-grow">
-          <h4 className="text-sm font-black uppercase tracking-[0.2em] mb-1">Control de Integridad</h4>
-          <p className="text-xs text-slate-400 font-medium italic">
-            Cualquier cambio en esta matriz impacta globalmente la seguridad del sistema y la visibilidad de los módulos.
-          </p>
+        <div className="flex-1 text-center md:text-left z-10 relative">
+            <h5 className="text-xl font-black uppercase tracking-tighter italic mb-1">Control de Integridad de Seguridad</h5>
+            <p className="text-gray-400 font-medium text-sm max-w-2xl">Cada ajuste en esta matriz modifica en tiempo real los permisos de acceso de los empleados. Los cambios son auditados y quedan registrados en la bitácora del sistema.</p>
         </div>
-        <div className="px-6 py-3 bg-white/10 rounded-xl border border-white/10 text-[10px] font-black uppercase tracking-widest">
-          Audit Log: On
+        <div className="flex items-center gap-3 px-6 py-3 bg-white/5 border border-white/10 rounded-2xl text-[10px] font-black uppercase tracking-widest z-10 relative">
+            <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse" />
+            Auditoría Activa: 24/7
         </div>
       </div>
     </div>

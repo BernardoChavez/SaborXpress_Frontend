@@ -11,7 +11,9 @@ import {
   ChevronRight,
   ClipboardList,
   Utensils,
-  Settings
+  Settings,
+  ArrowRight,
+  Dot
 } from 'lucide-react';
 import { inventarioService } from '../inventarioService';
 import type { InventarioItem, FichaTransformacion, Receta } from '../types/inventario.types';
@@ -64,6 +66,14 @@ const InventarioPage = () => {
   useEffect(() => {
     fetchData();
   }, []);
+
+  // Agrupar recetas por producto
+  const recetasAgrupadas = recetas.reduce((acc, r) => {
+    const prodName = r.producto?.nombre || 'Producto sin nombre';
+    if (!acc[prodName]) acc[prodName] = [];
+    acc[prodName].push(r);
+    return acc;
+  }, {} as Record<string, Receta[]>);
 
   return (
     <div className="space-y-6">
@@ -152,66 +162,86 @@ const InventarioPage = () => {
             />
           )}
           {activeTab === 'recetas' && (
-             <div className="space-y-6">
+             <div className="space-y-8">
                 <div className="flex items-center justify-between">
                     <div>
-                        <h2 className="text-lg font-bold text-gray-900">Relaciones y Recetas</h2>
-                        <p className="text-xs text-gray-500">Configuración inteligente de consumo y transformación</p>
+                        <h2 className="text-xl font-black text-gray-900">Relaciones y Recetas</h2>
+                        <p className="text-sm text-gray-500">Configuración inteligente de consumo y transformación</p>
                     </div>
                     <button 
                         onClick={() => setShowRecetasModal(true)}
-                        className="flex items-center gap-2 px-4 py-2 bg-orange-500 text-white text-xs font-bold rounded-xl transition-all shadow-lg shadow-orange-100"
+                        className="flex items-center gap-2 px-5 py-2.5 bg-orange-500 text-white text-xs font-black rounded-xl transition-all shadow-xl shadow-orange-100 hover:bg-orange-600 uppercase tracking-widest"
                     >
-                        <Settings size={16} />
+                        <Settings size={18} />
                         Gestionar Recetas
                     </button>
                 </div>
 
-                <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                    {/* Lista de Fichas */}
-                    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                        <div className="p-5 border-b border-gray-50 bg-gray-50/50 flex items-center gap-2">
-                            <ArrowRightLeft size={18} className="text-blue-500" />
-                            <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Fichas de Transformación</h3>
+                <div className="grid grid-cols-1 xl:grid-cols-12 gap-8">
+                    {/* Fichas de Transformación (Left Side) */}
+                    <div className="xl:col-span-4 space-y-4">
+                        <div className="flex items-center gap-3 mb-2">
+                             <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center"><ArrowRightLeft size={16}/></div>
+                             <h3 className="font-black text-gray-900 uppercase text-xs tracking-widest">Fichas de Transformación</h3>
                         </div>
-                        <div className="p-4 space-y-3">
+                        <div className="space-y-3">
                             {fichas.length === 0 ? (
-                                <p className="text-center py-8 text-gray-400 italic text-sm">No hay fichas configuradas</p>
+                                <div className="p-10 bg-white rounded-3xl border border-dashed border-gray-200 text-center text-gray-400 text-sm italic">No hay fichas</div>
                             ) : fichas.map(f => (
-                                <div key={f.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl">
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-xs font-bold text-gray-700">{f.bruto?.nombre}</div>
-                                        <ArrowRightLeft size={12} className="text-gray-300" />
-                                        <div className="text-xs font-bold text-blue-600">{f.procesado?.nombre}</div>
+                                <div key={f.id} className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
+                                    <div className="flex items-center gap-2">
+                                        <div className="text-[11px] font-black text-gray-900 uppercase">{f.bruto?.nombre}</div>
+                                        <ArrowRight size={12} className="text-blue-400" />
+                                        <div className="text-[11px] font-black text-blue-600 uppercase">{f.procesado?.nombre}</div>
                                     </div>
-                                    <div className="text-[10px] font-black text-gray-400 bg-white px-2 py-1 rounded-lg border border-gray-100">
-                                        1u = {f.cantidad_procesado} {f.procesado?.unidad_medida}
+                                    <div className="px-2 py-1 bg-gray-50 rounded-lg text-[9px] font-black text-gray-400 border border-gray-100 group-hover:bg-blue-50 group-hover:text-blue-500 group-hover:border-blue-100 transition-all">
+                                        1u = {f.cantidad_procesado}{f.procesado?.unidad_medida}
                                     </div>
                                 </div>
                             ))}
                         </div>
                     </div>
 
-                    {/* Lista de Recetas */}
-                    <div className="bg-white rounded-3xl border border-gray-100 overflow-hidden shadow-sm">
-                        <div className="p-5 border-b border-gray-50 bg-gray-50/50 flex items-center gap-2">
-                            <Utensils size={18} className="text-orange-500" />
-                            <h3 className="font-bold text-gray-800 text-sm uppercase tracking-wider">Recetas del Menú</h3>
+                    {/* Recetas Agrupadas (Right Side) */}
+                    <div className="xl:col-span-8 space-y-4">
+                        <div className="flex items-center gap-3 mb-2">
+                             <div className="w-8 h-8 bg-orange-100 text-orange-600 rounded-lg flex items-center justify-center"><Utensils size={16}/></div>
+                             <h3 className="font-black text-gray-900 uppercase text-xs tracking-widest">Recetas del Menú (Insumos por Plato)</h3>
                         </div>
-                        <div className="p-4 space-y-3">
-                            {recetas.length === 0 ? (
-                                <p className="text-center py-8 text-gray-400 italic text-sm">No hay recetas configuradas</p>
-                            ) : recetas.map(r => (
-                                <div key={r.id} className="flex items-center justify-between p-3 bg-gray-50 rounded-2xl">
-                                    <div className="flex items-center gap-3">
-                                        <div className="text-xs font-bold text-gray-700">{r.producto?.nombre}</div>
-                                        <ChevronRight size={12} className="text-gray-300" />
-                                        <div className="text-xs font-bold text-orange-600">{r.procesado?.nombre}</div>
+                        
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            {Object.keys(recetasAgrupadas).length === 0 ? (
+                                <div className="col-span-full p-20 bg-white rounded-[40px] border border-dashed border-gray-200 text-center text-gray-400 text-sm italic">No hay recetas configuradas</div>
+                            ) : Object.entries(recetasAgrupadas).map(([producto, insumos]) => (
+                                <motion.div 
+                                    key={producto}
+                                    whileHover={{ y: -4 }}
+                                    className="bg-white rounded-[32px] border border-gray-100 shadow-sm overflow-hidden flex flex-col hover:shadow-xl hover:border-orange-100 transition-all"
+                                >
+                                    <div className="p-5 bg-orange-50/50 border-b border-orange-100 flex items-center gap-3">
+                                        <div className="w-10 h-10 bg-white rounded-xl shadow-sm flex items-center justify-center text-orange-500"><Utensils size={20}/></div>
+                                        <div>
+                                            <h4 className="font-black text-gray-900 uppercase text-xs tracking-tighter">{producto}</h4>
+                                            <p className="text-[9px] font-bold text-orange-600/60 uppercase">Consume {insumos.length} insumos</p>
+                                        </div>
                                     </div>
-                                    <div className="text-[10px] font-black text-gray-400 bg-white px-2 py-1 rounded-lg border border-gray-100">
-                                        -{r.cantidad} {r.procesado?.unidad_medida}
+                                    <div className="p-5 space-y-3 flex-1 bg-white">
+                                        {insumos.map((r) => (
+                                            <div key={r.id} className="flex items-center justify-between group/item">
+                                                <div className="flex items-center gap-2">
+                                                    <div className="w-1.5 h-1.5 rounded-full bg-orange-400 opacity-40 group-hover/item:opacity-100 transition-opacity" />
+                                                    <span className="text-[10px] font-bold text-gray-600 group-hover/item:text-gray-900 transition-colors uppercase">{r.procesado?.nombre}</span>
+                                                </div>
+                                                <span className="text-[10px] font-black text-orange-500 bg-orange-50 px-2 py-0.5 rounded-lg border border-orange-100">
+                                                    -{Number(r.cantidad).toFixed(2)} {r.procesado?.unidad_medida}
+                                                </span>
+                                            </div>
+                                        ))}
                                     </div>
-                                </div>
+                                    <div className="p-4 bg-gray-50/50 flex justify-end">
+                                        <span className="text-[8px] font-black text-gray-400 uppercase tracking-widest">Descuento automático al vender</span>
+                                    </div>
+                                </motion.div>
                             ))}
                         </div>
                     </div>

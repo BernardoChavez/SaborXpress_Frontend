@@ -8,6 +8,7 @@ export interface BitacoraEntry {
   hora_inicio: string | null;
   hora_cierre: string | null;
   usuario?: {
+    correo?: string;
     persona?: {
       nombre?: string;
     };

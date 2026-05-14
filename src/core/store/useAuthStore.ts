@@ -8,6 +8,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       tipo_usuario: null,
+      permisos: [],
       isAuthenticated: false,
 
       setAuth: (user: User, token: string) =>
@@ -15,6 +16,7 @@ export const useAuthStore = create<AuthState>()(
           user,
           token,
           tipo_usuario: user.tipo_usuario,
+          permisos: user.permisos || [],
           isAuthenticated: true,
         }),
 
@@ -23,15 +25,17 @@ export const useAuthStore = create<AuthState>()(
           user: null,
           token: null,
           tipo_usuario: null,
+          permisos: [],
           isAuthenticated: false,
         }),
     }),
     {
-      name: 'saborxpress-auth', // clave en localStorage
+      name: 'saborxpress-auth',
       partialize: (state) => ({
         user: state.user,
         token: state.token,
         tipo_usuario: state.tipo_usuario,
+        permisos: state.permisos,
         isAuthenticated: state.isAuthenticated,
       }),
     }

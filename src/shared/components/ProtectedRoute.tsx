@@ -3,38 +3,45 @@ import { useAuthStore } from '../../core/store/useAuthStore';
 import type { TipoUsuario } from '../../core/types/auth.types';
 
 interface ProtectedRouteProps {
-  /** Lista de roles que pueden acceder. Si está vacío, solo requiere autenticación. */
+  /** Lista de roles que pueden acceder (opcional) */
   allowedRoles?: TipoUsuario[];
+  /** Permiso específico requerido (ej: 'CU20:ver') */
+  requiredPermission?: string;
   /** Ruta de redirección si no está autenticado */
   redirectTo?: string;
-  /** Ruta de redirección si no tiene permiso (rol insuficiente) */
+  /** Ruta de redirección si no tiene permiso */
   unauthorizedPath?: string;
 }
 
-/**
- * ProtectedRoute
- * - Si el usuario NO está autenticado → redirige a /login
- * - Si el usuario está autenticado pero su rol NO está en allowedRoles → redirige a /unauthorized
- * - Si todo OK → renderiza el <Outlet />
- */
 const ProtectedRoute = ({
   allowedRoles = [],
+  requiredPermission,
   redirectTo = '/login',
   unauthorizedPath = '/unauthorized',
 }: ProtectedRouteProps) => {
-  const { isAuthenticated, tipo_usuario } = useAuthStore();
+  const { isAuthenticated, tipo_usuario, permisos } = useAuthStore();
 
   // 1. No autenticado
   if (!isAuthenticated) {
     return <Navigate to={redirectTo} replace />;
   }
 
-  // 2. Roles definidos pero el usuario no tiene el rol requerido
+  // 2. El Administrador siempre tiene acceso a todo (Súper Usuario)
+  if (tipo_usuario === 'Admin') {
+    return <Outlet />;
+  }
+
+  // 3. Si se requiere un permiso específico (Para roles no-admin)
+  if (requiredPermission && !permisos.includes(requiredPermission)) {
+    return <Navigate to={unauthorizedPath} replace />;
+  }
+
+  // 4. Roles definidos pero el usuario no tiene el rol requerido
   if (allowedRoles.length > 0 && (!tipo_usuario || !allowedRoles.includes(tipo_usuario))) {
     return <Navigate to={unauthorizedPath} replace />;
   }
 
-  // 3. Todo OK
+  // 5. Todo OK
   return <Outlet />;
 };
 
