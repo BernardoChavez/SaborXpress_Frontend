@@ -17,14 +17,6 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { rolesService } from '../rolesService';
 import type { Rol, Paquete, PermisoRol, CasoUso } from '../types/roles.types';
 
-const MODULE_COLORS: Record<string, string> = {
-  'Seguridad': 'blue',
-  'Usuarios': 'purple',
-  'Inventarios': 'green',
-  'Ventas': 'orange',
-  'Configuración': 'slate'
-};
-
 const RolesPage = () => {
   const [paquetes, setPaquetes] = useState<Paquete[]>([]);
   const [roles, setRoles] = useState<Rol[]>([]);
