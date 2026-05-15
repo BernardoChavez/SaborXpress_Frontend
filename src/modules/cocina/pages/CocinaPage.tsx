@@ -8,15 +8,15 @@ import { useEffect, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Clock, 
-  CheckCircle2, 
+  CheckCircle, 
   Timer, 
-  UtensilsCrossed, 
+  Utensils, 
   AlertCircle,
   Play,
   Check,
   Send,
-  Loader2,
-  PackageCheck,
+  Loader,
+  Package,
   Info
 } from 'lucide-react';
 import { cocinaService } from '../cocinaService';
@@ -59,7 +59,7 @@ const CocinaPage = () => {
     if (loading && comandas.length === 0) {
         return (
             <div className="h-[80vh] flex flex-col items-center justify-center gap-4">
-                <Loader2 className="animate-spin text-orange-500" size={48} />
+                <Loader className="animate-spin text-orange-500" size={48} />
                 <p className="text-gray-500 font-bold italic">Cargando monitor de cocina...</p>
             </div>
         );
@@ -71,7 +71,7 @@ const CocinaPage = () => {
             <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
                 <div>
                     <h1 className="text-3xl font-black text-gray-900 flex items-center gap-3">
-                        <UtensilsCrossed className="text-orange-500" size={32} />
+                        <Utensils className="text-orange-500" size={32} />
                         Monitor de Cocina
                     </h1>
                     <p className="text-gray-500 font-medium tracking-tight">Gestión de comandas en tiempo real (FIFO)</p>
@@ -99,7 +99,7 @@ const CocinaPage = () => {
 
                 {comandas.length === 0 && (
                     <div className="col-span-full py-32 text-center bg-gray-50 rounded-[60px] border-4 border-dashed border-gray-200">
-                        <PackageCheck size={80} className="mx-auto text-gray-200 mb-6" />
+                        <Package size={80} className="mx-auto text-gray-200 mb-6" />
                         <h2 className="text-2xl font-black text-gray-300 italic uppercase">Cocina Despejada</h2>
                         <p className="text-gray-400 font-medium">No hay pedidos pendientes en este momento.</p>
                     </div>
@@ -154,8 +154,8 @@ const ComandaTicket = ({ comanda, priority, loading, onUpdate }: CardProps) => {
                 <p className="text-[9px] font-bold text-gray-500">SANTA CRUZ DE LA SIERRA - BOLIVIA</p>
                 <div className="py-2">
                     <p className="text-[10px] text-gray-600">FECHA: {dateStr}</p>
-                    <p className="text-xs font-black mt-1">TIPO: {comanda.venta?.tipo_entrega?.toUpperCase()}</p>
-                    <p className="text-xl font-black bg-black text-white px-2 py-1 mt-2 inline-block">N° COMANDA: {comanda.venta?.nro_pedido}</p>
+                    <p className="text-xs font-black mt-1">TIPO: {(comanda as any).venta?.tipo_entrega?.toUpperCase()}</p>
+                    <p className="text-xl font-black bg-black text-white px-2 py-1 mt-2 inline-block">N° COMANDA: {(comanda as any).venta?.nro_pedido}</p>
                 </div>
             </div>
 
@@ -172,7 +172,7 @@ const ComandaTicket = ({ comanda, priority, loading, onUpdate }: CardProps) => {
                 </div>
                 
                 <div className="space-y-3">
-                    {comanda.venta?.detalles?.map((det, i) => (
+                    {((comanda as any).venta?.detalles || []).map((det: any, i: number) => (
                         <div key={i} className="flex text-xs leading-none">
                             <span className="w-8 font-black">{det.cantidad}</span>
                             <span className="flex-1 font-bold uppercase pr-2">{det.producto?.nombre}</span>
@@ -189,7 +189,7 @@ const ComandaTicket = ({ comanda, priority, loading, onUpdate }: CardProps) => {
                 </div>
                 <div className="flex justify-between items-center px-2">
                     <span className="text-sm font-black">TOTAL:</span>
-                    <span className="text-xl font-black">Bs. {Number(comanda.venta?.monto_total || 0).toFixed(2)}</span>
+                    <span className="text-xl font-black">Bs. {Number((comanda as any).venta?.monto_total || 0).toFixed(2)}</span>
                 </div>
 
                 {/* Acciones */}
@@ -200,7 +200,7 @@ const ComandaTicket = ({ comanda, priority, loading, onUpdate }: CardProps) => {
                             onClick={() => onUpdate(comanda.id, 'En preparación')}
                             className="flex-1 py-3 bg-blue-600 hover:bg-blue-700 text-white rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 shadow-lg shadow-blue-100 transition-all active:scale-95"
                         >
-                            {loading ? <Loader2 className="animate-spin size-3" /> : <><Play size={12} fill="currentColor" /> EMPEZAR</>}
+                            {loading ? <Loader className="animate-spin size-3" /> : <><Play size={12} fill="currentColor" /> EMPEZAR</>}
                         </button>
                     )}
 
@@ -210,7 +210,7 @@ const ComandaTicket = ({ comanda, priority, loading, onUpdate }: CardProps) => {
                             onClick={() => onUpdate(comanda.id, 'Listo')}
                             className="flex-1 py-3 bg-orange-500 hover:bg-orange-600 text-white rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 shadow-lg shadow-orange-100 transition-all active:scale-95"
                         >
-                            {loading ? <Loader2 className="animate-spin size-3" /> : <><Check size={14} strokeWidth={4} /> TERMINAR</>}
+                            {loading ? <Loader className="animate-spin size-3" /> : <><Check size={14} strokeWidth={4} /> TERMINAR</>}
                         </button>
                     )}
 
@@ -220,7 +220,7 @@ const ComandaTicket = ({ comanda, priority, loading, onUpdate }: CardProps) => {
                             onClick={() => onUpdate(comanda.id, 'Entregado')}
                             className="flex-1 py-3 bg-green-600 hover:bg-green-700 text-white rounded-xl text-[9px] font-black uppercase flex items-center justify-center gap-2 shadow-lg shadow-green-100 transition-all active:scale-95"
                         >
-                            {loading ? <Loader2 className="animate-spin size-3" /> : <><Send size={12} fill="currentColor" /> ENTREGAR</>}
+                            {loading ? <Loader className="animate-spin size-3" /> : <><Send size={12} fill="currentColor" /> ENTREGAR</>}
                         </button>
                     )}
                 </div>

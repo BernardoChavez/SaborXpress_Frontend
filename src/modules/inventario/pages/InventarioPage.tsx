@@ -7,11 +7,10 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { 
   Package, 
   Layers, 
-  ArrowRightLeft, 
   Plus, 
   RefreshCw, 
   AlertTriangle, 
-  CheckCircle2,
+  CheckCircle,
   ChevronRight,
   Utensils,
   Settings,
@@ -93,12 +92,12 @@ const InventarioPage = () => {
     });
   };
 
-  const recetasAgrupadas = recetas.reduce((acc, r) => {
+  const recetasAgrupadas = (recetas as any[]).reduce((acc: any, r: any) => {
     const prodName = r.producto?.nombre || 'Producto sin nombre';
     if (!acc[prodName]) acc[prodName] = [];
     acc[prodName].push(r);
     return acc;
-  }, {} as Record<string, Receta[]>);
+  }, {} as Record<string, any[]>);
 
   return (
     <div className="space-y-6 pb-20">
@@ -118,7 +117,7 @@ const InventarioPage = () => {
                 onClick={() => setShowTransformModal(true)}
                 className="flex items-center gap-2 px-4 py-2 bg-indigo-500 text-white rounded-xl text-sm font-bold hover:bg-indigo-600 shadow-lg shadow-indigo-100 transition-all active:scale-95"
             >
-                <ArrowRightLeft size={16} />
+                <RefreshCw size={16} />
                 Transformar Insumos
             </button>
             <button 
@@ -213,13 +212,13 @@ const InventarioPage = () => {
                     {/* Fichas de Transformación */}
                     <div className="xl:col-span-4 space-y-4">
                         <div className="flex items-center gap-3 mb-2">
-                             <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center"><ArrowRightLeft size={16}/></div>
+                             <div className="w-8 h-8 bg-blue-100 text-blue-600 rounded-lg flex items-center justify-center"><RefreshCw size={16}/></div>
                              <h3 className="font-black text-gray-900 uppercase text-xs tracking-widest">Fichas de Transformación</h3>
                         </div>
                         <div className="space-y-3">
                             {fichas.length === 0 ? (
                                 <div className="p-10 bg-white rounded-3xl border border-dashed border-gray-200 text-center text-gray-400 text-sm italic">No hay fichas</div>
-                            ) : fichas.map(f => (
+                            ) : (fichas as any[]).map((f: any) => (
                                 <div key={f.id} className="bg-white p-4 rounded-3xl border border-gray-100 shadow-sm flex items-center justify-between group hover:border-blue-200 transition-all">
                                     <div className="flex items-center gap-2">
                                         <div className="text-[11px] font-black text-gray-900 uppercase">{f.bruto?.nombre}</div>
@@ -244,7 +243,7 @@ const InventarioPage = () => {
                         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                             {Object.keys(recetasAgrupadas).length === 0 ? (
                                 <div className="col-span-full p-20 bg-white rounded-[40px] border border-dashed border-gray-200 text-center text-gray-400 text-sm italic">No hay recetas configuradas</div>
-                            ) : Object.entries(recetasAgrupadas).map(([producto, insumos]) => (
+                            ) : Object.entries(recetasAgrupadas).map(([producto, insumos]: [any, any]) => (
                                 <motion.div 
                                     key={producto}
                                     whileHover={{ y: -4 }}
@@ -258,7 +257,7 @@ const InventarioPage = () => {
                                         </div>
                                     </div>
                                     <div className="p-5 space-y-3 flex-1 bg-white">
-                                        {insumos.map((r) => (
+                                        {(insumos as any[]).map((r: any) => (
                                             <div key={r.id} className="flex items-center justify-between group/item">
                                                 <div className="flex items-center gap-2">
                                                     <div className="w-1.5 h-1.5 rounded-full bg-orange-400 opacity-40 group-hover/item:opacity-100 transition-opacity" />
@@ -312,7 +311,7 @@ const InventarioPage = () => {
 const FilterSelect = ({ value, onChange }: { value: StockFilter, onChange: (v: string) => void }) => {
   const options = [
     { id: 'todos',      label: 'Todos',      icon: <Layers size={14}/>,   color: 'gray' },
-    { id: 'disponible', label: 'Disponible',  icon: <CheckCircle2 size={14}/>, color: 'green' },
+    { id: 'disponible', label: 'Disponible',  icon: <CheckCircle size={14}/>, color: 'green' },
     { id: 'bajo',       label: 'Bajo Stock', icon: <AlertTriangle size={14}/>, color: 'orange' },
     { id: 'agotado',    label: 'Agotado',    icon: <Ban size={14}/>,           color: 'red' },
   ];
@@ -368,7 +367,7 @@ const InventoryGrid = ({ items, title, description, color, onAdd, onEdit }: { it
             <p className="text-gray-400 text-sm font-medium">No se encontraron productos con este filtro</p>
         </div>
       ) : (
-        items.map((item) => {
+        items.map((item: any) => {
           const isCritical = Number(item.stock) <= Number(item.stock_minimo);
           const isAgotado = Number(item.stock) <= 0;
 
@@ -417,7 +416,7 @@ const InventoryGrid = ({ items, title, description, color, onAdd, onEdit }: { it
                   </div>
                 ) : (
                   <div className="flex items-center gap-1.5 text-green-600 bg-green-50 px-3 py-1.5 rounded-xl border border-green-100">
-                    <CheckCircle2 size={14} />
+                    <CheckCircle size={14} />
                     <span className="text-[9px] font-black uppercase tracking-tighter">Disponible</span>
                   </div>
                 )}

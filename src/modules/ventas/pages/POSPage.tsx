@@ -12,16 +12,16 @@ import {
   Plus, 
   Minus, 
   X, 
-  Loader2, 
+  Loader, 
   ChevronRight, 
-  CheckCircle2, 
+  CheckCircle, 
   Lock, 
   ArrowRight,
   Utensils,
-  PackageCheck,
-  Banknote,
-  QrCode,
-  Calculator,
+  Package,
+  DollarSign,
+  Camera,
+  PlusSquare,
   Wallet,
   AlertCircle,
   Info
@@ -142,7 +142,7 @@ const POSPage = () => {
   if (loading && cajaAbierta === null) {
       return (
         <div className="h-[80vh] flex items-center justify-center">
-            <Loader2 className="animate-spin text-orange-500" size={48} />
+            <Loader className="animate-spin text-orange-500" size={48} />
         </div>
       );
   }
@@ -192,7 +192,7 @@ const POSPage = () => {
 
         <div className="flex-1 overflow-y-auto pr-2">
             <div className="grid grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-5 pb-10">
-              {filteredProds.map(prod => (
+            {filteredProds.map((prod: any) => (
                 <motion.div key={prod.id} whileTap={{ scale: 0.96 }} onClick={() => addToCart(prod)} className="bg-white p-4 rounded-[32px] border-2 border-transparent hover:border-orange-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group relative overflow-hidden">
                   <div className="aspect-square bg-gray-50 rounded-2xl mb-4 overflow-hidden relative">
                     {prod.imagen_url ? <img src={prod.imagen_url} alt={prod.nombre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Utensils size={40} /></div>}
@@ -230,7 +230,7 @@ const POSPage = () => {
                 </div>
             ) : (
                 <AnimatePresence initial={false}>
-                    {cart.map(item => (
+                    {cart.map((item: any) => (
                         <motion.div key={item.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl group">
                             <div className="w-12 h-12 bg-white rounded-lg border border-gray-100 shrink-0 overflow-hidden">
                                 {item.imagen_url ? <img src={item.imagen_url} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-200"><Utensils size={14}/></div>}
@@ -291,11 +291,11 @@ const POSPage = () => {
                             {/* Metodo Select */}
                             <div className="flex gap-4">
                                 <button onClick={() => setMetodoPago('Efectivo')} className={`flex-1 p-4 rounded-3xl border-2 transition-all flex items-center gap-3 ${metodoPago === 'Efectivo' ? 'border-orange-500 bg-orange-50' : 'border-gray-100 hover:border-gray-200'}`}>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${metodoPago === 'Efectivo' ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-gray-100 text-gray-400'}`}><Banknote size={20}/></div>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${metodoPago === 'Efectivo' ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-gray-100 text-gray-400'}`}><DollarSign size={20}/></div>
                                     <div className="text-left"><p className="text-[8px] font-black uppercase text-gray-400">Pago con</p><p className="font-black text-sm uppercase">Efectivo</p></div>
                                 </button>
                                 <button onClick={() => setMetodoPago('QR')} className={`flex-1 p-4 rounded-3xl border-2 transition-all flex items-center gap-3 ${metodoPago === 'QR' ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}>
-                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${metodoPago === 'QR' ? 'bg-blue-500 text-white shadow-lg shadow-blue-100' : 'bg-gray-100 text-gray-400'}`}><QrCode size={20}/></div>
+                                    <div className={`w-10 h-10 rounded-xl flex items-center justify-center ${metodoPago === 'QR' ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}><Camera size={20}/></div>
                                     <div className="text-left"><p className="text-[8px] font-black uppercase text-gray-400">Pago con</p><p className="font-black text-sm uppercase">QR</p></div>
                                 </button>
                             </div>
@@ -306,7 +306,7 @@ const POSPage = () => {
                                     <motion.div key="cash" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="space-y-4">
                                         <div className="grid grid-cols-2 gap-6">
                                             <div className="space-y-1.5">
-                                                <label className="text-[10px] font-black text-gray-400 uppercase ml-2 flex items-center gap-2"><Calculator size={12}/> Recibido</label>
+                                                <label className="text-[10px] font-black text-gray-400 uppercase ml-2 flex items-center gap-2"><PlusSquare size={12}/> Recibido</label>
                                                 <div className="relative">
                                                     <span className="absolute left-5 top-1/2 -translate-y-1/2 text-lg font-black text-gray-300">Bs.</span>
                                                     <input autoFocus type="number" value={montoRecibido} onChange={e => setMontoRecibido(e.target.value)} className="w-full pl-14 pr-6 py-5 bg-gray-50 border-2 border-gray-100 rounded-3xl text-3xl font-black outline-none focus:border-orange-500 transition-all" placeholder="0.00" />
@@ -325,13 +325,13 @@ const POSPage = () => {
                                     </motion.div>
                                 ) : (
                                     <motion.div key="qr" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-blue-50/50 p-6 rounded-[32px] border-2 border-blue-100 flex flex-col items-center text-center space-y-4">
-                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-md animate-pulse"><QrCode size={32} /></div>
+                                        <div className="w-16 h-16 bg-white rounded-2xl flex items-center justify-center text-blue-500 shadow-md animate-pulse"><Camera size={32} /></div>
                                         <div className="space-y-1">
                                             <h4 className="text-lg font-black text-blue-900 italic uppercase">Esperando QR</h4>
                                             <p className="text-[10px] text-blue-600 font-bold max-w-xs">Verifica el comprobante antes de confirmar la venta.</p>
                                         </div>
                                         <button onClick={() => setQrConfirmado(!qrConfirmado)} className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black transition-all ${qrConfirmado ? 'bg-green-500 text-white shadow-lg' : 'bg-white text-blue-500 border border-blue-200'}`}>
-                                            {qrConfirmado ? <><CheckCircle2 size={14}/> VERIFICADO</> : <><Info size={14}/> CONFIRMAR RECEPCIÓN</>}
+                                            {qrConfirmado ? <><CheckCircle size={14}/> VERIFICADO</> : <><Info size={14}/> CONFIRMAR RECEPCIÓN</>}
                                         </button>
                                     </motion.div>
                                 )}
@@ -348,7 +348,7 @@ const POSPage = () => {
                                     metodoPago === 'Efectivo' ? 'bg-orange-500 text-white shadow-orange-100' : 'bg-blue-600 text-white shadow-blue-100'
                                 } disabled:bg-gray-100 disabled:text-gray-300 disabled:shadow-none`}
                             >
-                                {submitting ? <Loader2 className="animate-spin size-4" /> : (metodoPago === 'Efectivo' ? <Banknote size={18}/> : <CheckCircle2 size={18}/>)}
+                                {submitting ? <Loader className="animate-spin size-4" /> : (metodoPago === 'Efectivo' ? <DollarSign size={18}/> : <CheckCircle size={18}/>)}
                                 FINALIZAR VENTA
                             </button>
                         </div>

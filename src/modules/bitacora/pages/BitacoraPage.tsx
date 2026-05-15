@@ -97,7 +97,7 @@ const BitacoraPage = () => {
                 <tr><td colSpan={5} className="py-20 text-center text-gray-400 font-black uppercase italic animate-pulse">Analizando registros de seguridad...</td></tr>
               ) : filteredEntries.length === 0 ? (
                 <tr><td colSpan={5} className="py-20 text-center text-gray-400 italic">No se encontraron registros en el historial.</td></tr>
-              ) : filteredEntries.map(entry => {
+              ) : filteredEntries.map((entry: any) => {
                 const isExpanded = expandedId === entry.id;
                 const method = (entry.accion || '').split(' ')[0].toUpperCase();
                 
