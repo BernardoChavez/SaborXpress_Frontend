@@ -69,3 +69,8 @@ NOTAS IMPORTANTES
 - Para detener el frontend: Ctrl+C en la terminal
 
 ========================================
+cd C:\Proyectos\SaborXpress_Backend
+php artisan serve
+
+cd C:\Proyectos\SaborXpress_Frontend
+npm run dev
