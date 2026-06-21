@@ -1,8 +1,8 @@
 import { Outlet } from 'react-router-dom';
 
 /**
- * Layout limpio para páginas de autenticación (login, registro).
- * Centra el contenido en pantalla completa.
+ * Layout limpio para páginas de autenticación (login, registro, recuperación).
+ * Centra el contenido en pantalla completa con un fondo degradado naranja-rojo.
  */
 const AuthLayout = () => {
   return (

@@ -1,3 +1,4 @@
+// React Router
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 // Layouts
@@ -13,19 +14,23 @@ import RegisterPage from '../../modules/auth/pages/RegisterPage';
 import RecoverPasswordPage from '../../modules/auth/pages/RecoverPasswordPage';
 import UnauthorizedPage from '../../modules/auth/pages/UnauthorizedPage';
 
-// Módulos
+// Dashboard
 import DashboardPage from '../../modules/dashboard/pages/DashboardPage';
 import ReportesPage from '../../modules/dashboard/pages/ReportesPage';
 import SeguimientoPedidoPage from '../../modules/dashboard/pages/SeguimientoPedidoPage';
 import ClienteComprarPage from '../../modules/dashboard/pages/ClienteComprarPage';
 import ClienteTicketsPage from '../../modules/dashboard/pages/ClienteTicketsPage';
 import ClienteNotificacionesPage from '../../modules/dashboard/pages/ClienteNotificacionesPage';
+
+// Administración
 import UsuariosPage  from '../../modules/usuarios/pages/UsuariosPage';
 import CatalogoPage  from '../../modules/catalogo/pages/CatalogoPage';
 import BitacoraPage  from '../../modules/bitacora/pages/BitacoraPage';
 import EmpresaPage from '../../modules/empresa/pages/EmpresaPage';
 import RolesPage from '../../modules/roles/pages/RolesPage';
 import InventarioPage from '../../modules/inventario/pages/InventarioPage';
+
+// Ventas y Cocina
 import POSPage from '../../modules/ventas/pages/POSPage';
 import CajaPage from '../../modules/ventas/pages/CajaPage';
 import CocinaPage from '../../modules/cocina/pages/CocinaPage';
