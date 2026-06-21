@@ -15,6 +15,7 @@ export interface Producto {
   precio_venta: number;
   id_categoria: number;
   categoria?: Categoria;
+  imagen_url?: string;
 }
 
 export interface CreateProductoDto {
