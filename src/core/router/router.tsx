@@ -1,3 +1,4 @@
+// React Router
 import { createBrowserRouter, Navigate } from 'react-router-dom';
 
 // Layouts
@@ -13,7 +14,7 @@ import RegisterPage from '../../modules/paquete1_seguridad/auth/pages/RegisterPa
 import RecoverPasswordPage from '../../modules/paquete1_seguridad/auth/pages/RecoverPasswordPage';
 import UnauthorizedPage from '../../modules/paquete1_seguridad/auth/pages/UnauthorizedPage';
 
-// Módulos
+// Dashboard
 import DashboardPage from '../../modules/dashboard/pages/DashboardPage';
 import ReportesPage from '../../modules/dashboard/pages/ReportesPage';
 import SeguimientoPedidoPage from '../../modules/dashboard/pages/SeguimientoPedidoPage';

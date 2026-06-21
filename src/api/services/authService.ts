@@ -2,10 +2,6 @@ import axiosInstance from '../axios';
 import type { LoginCredentials, LoginResponse } from '../../core/types/auth.types';
 
 export const authApi = {
-  register: async (userData: { nombre: string; correo: string; contrasena: string; telefono?: string }): Promise<LoginResponse> => {
-    const { data } = await axiosInstance.post<LoginResponse>('/register', userData);
-    return data;
-  },
   /**
    * POST /api/login
    * Retorna el usuario y el token Bearer
@@ -31,14 +27,22 @@ export const authApi = {
     const { data } = await axiosInstance.get('/me');
     return data;
   },
+
+  register: async (userData: { nombre: string; correo: string; contrasena: string; telefono?: string }): Promise<LoginResponse> => {
+    const { data } = await axiosInstance.post<LoginResponse>('/register', userData);
+    return data;
+  },
+
   forgotPassword: async (correo: string): Promise<{message: string}> => {
     const { data } = await axiosInstance.post('/password/forgot', { correo });
     return data;
   },
+
   verifyCode: async (correo: string, codigo: string): Promise<{message: string, token_temporal: string}> => {
     const { data } = await axiosInstance.post('/password/verify', { correo, codigo });
     return data;
   },
+
   resetPassword: async (correo: string, codigo: string, nueva_contrasena: string): Promise<{message: string}> => {
     const { data } = await axiosInstance.post('/password/reset', { correo, codigo, nueva_contrasena });
     return data;
