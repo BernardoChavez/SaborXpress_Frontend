@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  Bell, Clock, UtensilsCrossed, CheckCircle2, RefreshCw, Loader, ShoppingBag
+  Bell, Clock, UtensilsCrossed, CheckCircle2, RefreshCw, Loader
 } from 'lucide-react';
 import { ventaService } from '../../paquete5_ventas/ventas/services/ventaService';
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { 
-  FileText, Clock, CreditCard, ChevronRight, Receipt, Loader
+  FileText, Clock, CreditCard, Receipt, Loader
 } from 'lucide-react';
 import { ventaService } from '../../paquete5_ventas/ventas/services/ventaService';
 import TicketModal from '../../paquete5_ventas/ventas/components/TicketModal';

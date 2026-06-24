@@ -22,7 +22,6 @@ import {
   PlusSquare,
   Wallet,
   AlertCircle,
-  Info,
   CreditCard,
   QrCode,
   Loader2,
@@ -242,7 +241,7 @@ const POSPage = () => {
       const res = await ventaService.registrar({
         metodo_pago: metodoPago === 'Tarjeta' ? 'QR' : (metodoPago === 'QR' ? 'QR' : 'Efectivo'),
         tipo_entrega: tipoEntrega,
-        codigo_qr: metodoPago === 'Tarjeta' ? 'Tarjeta-POS' : (metodoPago === 'QR' ? 'QR-POS' : null),
+        codigo_qr: metodoPago === 'Tarjeta' ? 'Tarjeta-POS' : (metodoPago === 'QR' ? 'QR-POS' : undefined),
         detalles: cart.map(i => ({
           id_producto: i.id,
           cantidad: i.cantidad,

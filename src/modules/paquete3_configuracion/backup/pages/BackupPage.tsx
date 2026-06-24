@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion } from 'framer-motion';
-import { Database, Download, UploadCloud, Clock, Save, Loader, CheckCircle, Settings, ShieldAlert } from 'lucide-react';
+import { Database, Download, UploadCloud, Clock, Save, Loader, Settings, ShieldAlert } from 'lucide-react';
 
 const BackupPage = () => {
     // Estado para Backup Manual

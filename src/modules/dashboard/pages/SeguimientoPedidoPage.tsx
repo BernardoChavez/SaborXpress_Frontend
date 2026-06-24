@@ -1,9 +1,7 @@
 import { useState, useEffect } from 'react';
 import {
-  Search, Play, Pause, RefreshCw, FileText, CheckCircle2, Clock, UtensilsCrossed, AlertCircle, ArrowLeft
+  Search, Play, RefreshCw, FileText, CheckCircle2, Clock, UtensilsCrossed, AlertCircle
 } from 'lucide-react';
-import { useNavigate } from 'react-router-dom';
-import axiosInstance from '../../../api/axios';
 
 interface OrderStatus {
   id: number;
@@ -14,7 +12,6 @@ interface OrderStatus {
 }
 
 const SeguimientoPedidoPage = () => {
-  const navigate = useNavigate();
   const [orderId, setOrderId] = useState('');
   const [searchingId, setSearchingId] = useState<string | null>(null);
   

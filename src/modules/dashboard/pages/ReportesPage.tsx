@@ -1,10 +1,10 @@
 import { useState, useEffect, useRef } from 'react';
 import {
-  FileSpreadsheet, TrendingUp, Package, ArrowLeft, FileText, Mic, MicOff, BarChart2, MessageSquare, TableProperties, Database, Calendar
+  FileSpreadsheet, TrendingUp, Package, ArrowLeft, FileText, Mic, MicOff, BarChart2, MessageSquare, Calendar
 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import axiosInstance from '../../../api/axios';
-import { BarChart, Bar, PieChart, Pie, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
+import { PieChart, Pie, LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, Cell } from 'recharts';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 

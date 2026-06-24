@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, CheckCircle, Ban, Loader, AlertCircle, ShoppingBag } from 'lucide-react';
+import { X, CheckCircle, Ban, AlertCircle, ShoppingBag } from 'lucide-react';
 import { inventarioService } from '../inventarioService';
 import type { OrdenCompra } from '../types/inventario.types';
 
