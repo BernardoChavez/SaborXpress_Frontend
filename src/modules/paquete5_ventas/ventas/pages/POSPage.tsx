@@ -25,7 +25,10 @@ import {
   Info,
   CreditCard,
   QrCode,
-  Loader2
+  Loader2,
+  XCircle,
+  Wifi,
+  ShieldCheck
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { categoriaService, productoService } from '../../../paquete3_configuracion/catalogo/catalogoService';
@@ -50,26 +53,33 @@ const POSPage = () => {
   const [loading, setLoading] = useState(true);
   const [showCheckout, setShowCheckout] = useState(false);
   const [metodoPago, setMetodoPago] = useState<'Efectivo' | 'QR' | 'Tarjeta'>('Efectivo');
-  const [tipoEntrega] = useState<'Mesa' | 'Llevar'>('Mesa');
+  const [tipoEntrega, setTipoEntrega] = useState<'Mesa' | 'Llevar'>('Mesa');
   const [submitting, setSubmitting] = useState(false);
 
-  // Estados para Cobro Estilo Supermercado
+  // Estados Efectivo
   const [montoRecibido, setMontoRecibido] = useState<string>('');
-  const [qrConfirmado, setQrConfirmado] = useState(false);
-  const [tarjetaConfirmada, setTarjetaConfirmada] = useState(false);
-  const [isVerifying, setIsVerifying] = useState(false);
   const [ventaEstado, setVentaEstado] = useState('');
+
+  // Estados QR
+  const [qrConfirmado, setQrConfirmado] = useState(false);
+  const [qrStep, setQrStep] = useState<number>(0); // 0: inicial, 1: esperando, 2: exitoso
   
+  // Estados Tarjeta
+  const [tarjetaConfirmada, setTarjetaConfirmada] = useState(false);
   const [tarjetaNombre, setTarjetaNombre] = useState('');
   const [tarjetaNumero, setTarjetaNumero] = useState('');
   const [tarjetaExp, setTarjetaExp] = useState('');
   const [tarjetaCVV, setTarjetaCVV] = useState('');
+  const [isFlipped, setIsFlipped] = useState(false);
+  const [cardError, setCardError] = useState<string | null>(null);
+  
+  // Pasarela
+  const [isProcessingModal, setIsProcessingModal] = useState(false);
+  const [pasarelaPaso, setPasarelaPaso] = useState<number>(0);
 
-  // Estados para Ticket de Venta (CU22)
+  // Estados para Ticket y Facturación
   const [showTicketModal, setShowTicketModal] = useState(false);
   const [ticketText, setTicketText] = useState('');
-
-  // Estados para Facturación (CU26)
   const [requiereFactura, setRequiereFactura] = useState(false);
   const [nitCliente, setNitCliente] = useState('');
   const [nombreCliente, setNombreCliente] = useState('');
@@ -130,17 +140,109 @@ const POSPage = () => {
   };
 
   const total = cart.reduce((sum, i) => sum + (Number(i.precio_venta) * i.cantidad), 0);
-
-  // Cálculos de vuelto
   const cambio = Math.max(0, Number(montoRecibido) - total);
   const puedePagarEfectivo = Number(montoRecibido) >= total;
+
+  // Lógica de Tarjeta Realista
+  const luhnCheck = (val: string) => {
+    let checksum = 0; 
+    let j = 1; 
+    for (let i = val.length - 1; i >= 0; i--) {
+      let calc = 0;
+      calc = Number(val.charAt(i)) * j;
+      if (calc > 9) {
+        checksum = checksum + 1;
+        calc = calc - 10;
+      }
+      checksum = checksum + calc;
+      if (j == 1) {
+        j = 2;
+      } else {
+        j = 1;
+      }
+    }
+    return (checksum % 10 == 0);
+  };
+
+  const validateCard = () => {
+    const numberStr = tarjetaNumero.replace(/\s/g, '');
+    if (numberStr.length < 15) return "Número de tarjeta incompleto";
+    if (!luhnCheck(numberStr)) return "Número de tarjeta inválido o incorrecto";
+    if (tarjetaExp.length < 5) return "Fecha incompleta";
+    
+    const [m, y] = tarjetaExp.split('/');
+    const month = parseInt(m, 10);
+    const year = parseInt(`20${y}`, 10);
+    const now = new Date();
+    
+    if (month < 1 || month > 12) return "Mes de expiración inválido";
+    if (year < now.getFullYear() || (year === now.getFullYear() && month < now.getMonth() + 1)) return "Esta tarjeta está vencida";
+    if (tarjetaCVV.length < 3) return "CVV incompleto";
+    return null;
+  };
+
+  const getCardBrand = () => {
+    if (tarjetaNumero.startsWith('4')) return 'VISA';
+    if (tarjetaNumero.startsWith('5')) return 'MASTERCARD';
+    if (tarjetaNumero.startsWith('3')) return 'AMEX';
+    return '';
+  };
+
+  const handleProcesarTarjeta = () => {
+    const error = validateCard();
+    if (error) {
+        setCardError(error);
+        return;
+    }
+    setCardError(null);
+    setIsProcessingModal(true);
+    setPasarelaPaso(1); // Conectando...
+    
+    setTimeout(() => {
+        setPasarelaPaso(2); // Verificando fondos...
+        
+        setTimeout(() => {
+            const rawNumber = tarjetaNumero.replace(/\s/g, '');
+            if (rawNumber === '4532111122223336') {
+                setPasarelaPaso(3); // Error fondos
+                setTimeout(() => {
+                    setIsProcessingModal(false);
+                    setCardError("Transacción Rechazada: Fondos Insuficientes");
+                }, 5000);
+            } else if (rawNumber === '4532999988887776') {
+                setPasarelaPaso(4); // Error bloqueada
+                setTimeout(() => {
+                    setIsProcessingModal(false);
+                    setCardError("Transacción Rechazada: Tarjeta Bloqueada o Retenida");
+                }, 5000);
+            } else {
+                setPasarelaPaso(5); // Aprobado
+                setTimeout(() => {
+                    setIsProcessingModal(false);
+                    setTarjetaConfirmada(true);
+                }, 4000);
+            }
+        }, 5500);
+    }, 4500);
+  };
+
+  const iniciarPagoQR = () => {
+    setQrStep(1);
+    // Simula que el cliente tarda 5-8 segundos en sacar su cel, escanear y pagar
+    const randomTime = Math.floor(Math.random() * 3000) + 4000;
+    setTimeout(() => {
+        setQrStep(2);
+        setQrConfirmado(true);
+    }, randomTime);
+  };
 
   const handleFinalizarVenta = async () => {
     setSubmitting(true);
     try {
       const res = await ventaService.registrar({
-        metodo_pago: metodoPago === 'Tarjeta' ? 'QR' : metodoPago,
+        metodo_pago: metodoPago === 'Tarjeta' ? 'QR' : (metodoPago === 'QR' ? 'QR' : 'Efectivo'),
         tipo_entrega: tipoEntrega,
+        codigo_qr: metodoPago === 'Tarjeta' ? 'Tarjeta-POS' : (metodoPago === 'QR' ? 'QR-POS' : null),
         detalles: cart.map(i => ({
           id_producto: i.id,
           cantidad: i.cantidad,
@@ -153,7 +255,6 @@ const POSPage = () => {
         email_cliente: emailCliente
       });
 
-      // Obtener el ticket en texto formateado para ticketera (CU22)
       try {
         const ticketData = await ventaService.getTicket(res.venta.id);
         if (ticketData && ticketData.ticket_text) {
@@ -166,8 +267,18 @@ const POSPage = () => {
 
       setCart([]);
       setShowCheckout(false);
+      resetPagos();
+    } catch (e) {
+      alert('Error al procesar venta');
+    } finally {
+      setSubmitting(false);
+    }
+  };
+
+  const resetPagos = () => {
       setMontoRecibido('');
       setQrConfirmado(false);
+      setQrStep(0);
       setTarjetaConfirmada(false);
       setTarjetaNombre('');
       setTarjetaNumero('');
@@ -178,11 +289,7 @@ const POSPage = () => {
       setNitCliente('');
       setNombreCliente('');
       setEmailCliente('');
-    } catch (e) {
-      alert('Error al procesar venta');
-    } finally {
-      setSubmitting(false);
-    }
+      setCardError(null);
   };
 
   if (loading && cajaAbierta === null) {
@@ -219,8 +326,6 @@ const POSPage = () => {
           const canvas = document.createElement('canvas');
           let width = img.width;
           let height = img.height;
-          
-          // Redimensionar a un máximo de 400x400 para no llenar el localStorage
           const MAX_SIZE = 400;
           if (width > height) {
             if (width > MAX_SIZE) {
@@ -233,20 +338,16 @@ const POSPage = () => {
               height = MAX_SIZE;
             }
           }
-          
           canvas.width = width;
           canvas.height = height;
           const ctx = canvas.getContext('2d');
           ctx?.drawImage(img, 0, 0, width, height);
-          
-          // Comprimir a formato WEBP con calidad 80%
           const compressedBase64 = canvas.toDataURL('image/webp', 0.8);
-          
           try {
             localStorage.setItem(`img_prod_${prodId}`, compressedBase64);
-            setProductos([...productos]); // forzar re-render
+            setProductos([...productos]); 
           } catch (error) {
-            alert("No hay suficiente espacio en el navegador para guardar más imágenes. Intenta usar la Opción 1 (guardar en la carpeta public).");
+            alert("Memoria insuficiente para subir más imágenes localmente.");
           }
         };
         img.src = event.target?.result as string;
@@ -295,7 +396,6 @@ const POSPage = () => {
                   <div className="aspect-square bg-gray-50 rounded-xl lg:rounded-2xl mb-3 lg:mb-4 overflow-hidden relative group/img">
                     {currentImg ? <img src={currentImg} alt={prod.nombre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Utensils size={32} className="lg:w-10 lg:h-10"/></div>}
                     
-                    {/* Botón flotante para subir imagen */}
                     <div 
                       className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
                       onClick={(e) => e.stopPropagation()}
@@ -371,7 +471,7 @@ const POSPage = () => {
             <div className="flex justify-between items-end">
                 <div><p className="text-[10px] font-black text-gray-500 uppercase tracking-widest">Total Orden</p><span className="text-3xl font-black italic">Bs. {total.toFixed(2)}</span></div>
             </div>
-            <button disabled={cart.length === 0} onClick={() => setShowCheckout(true)} className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-800 disabled:text-gray-600 text-white font-black rounded-2xl shadow-xl shadow-orange-950/20 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-xs tracking-widest">CONTINUAR AL PAGO <ChevronRight size={18} /></button>
+            <button disabled={cart.length === 0} onClick={() => { setShowCheckout(true); resetPagos(); }} className="w-full py-4 bg-orange-500 hover:bg-orange-600 disabled:bg-gray-800 disabled:text-gray-600 text-white font-black rounded-2xl shadow-xl shadow-orange-950/20 transition-all active:scale-95 flex items-center justify-center gap-3 uppercase text-xs tracking-widest">CONTINUAR AL PAGO <ChevronRight size={18} /></button>
         </div>
       </div>
 
@@ -380,7 +480,7 @@ const POSPage = () => {
         {showCheckout && (
             <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} onClick={() => setShowCheckout(false)} className="absolute inset-0 bg-black/60 backdrop-blur-sm" />
-                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white rounded-3xl lg:rounded-[40px] shadow-2xl w-full max-w-3xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:min-h-[550px] md:max-h-[90vh]">
+                <motion.div initial={{ scale: 0.95, opacity: 0 }} animate={{ scale: 1, opacity: 1 }} exit={{ scale: 0.95, opacity: 0 }} className="relative bg-white rounded-3xl lg:rounded-[40px] shadow-2xl w-full max-w-4xl overflow-hidden flex flex-col md:flex-row h-[90vh] md:h-auto md:min-h-[600px] md:max-h-[90vh]">
                     
                     {/* Left: Summary Panel */}
                     <div className="w-full md:w-72 bg-gray-50 p-6 md:p-8 border-b md:border-b-0 md:border-r border-gray-100 flex flex-col shrink-0 max-h-[30vh] md:max-h-full">
@@ -403,19 +503,74 @@ const POSPage = () => {
                     </div>
 
                     {/* Right: Payment Panel */}
-                    <div className="flex-1 p-6 md:p-10 flex flex-col overflow-y-auto">
+                    <div className="flex-1 p-6 md:p-10 flex flex-col overflow-y-auto relative">
+                        {/* Overlay 3D Secure / Pasarela */}
+                        <AnimatePresence>
+                            {isProcessingModal && (
+                                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 bg-white/90 backdrop-blur-sm z-50 flex flex-col items-center justify-center p-8 text-center rounded-r-[40px]">
+                                    {pasarelaPaso === 1 && (
+                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex flex-col items-center">
+                                            <Wifi className="text-blue-500 w-16 h-16 animate-pulse mb-4" />
+                                            <h3 className="text-xl font-black text-gray-900 uppercase">Conectando con el Banco...</h3>
+                                            <p className="text-sm text-gray-500 mt-2">Estableciendo conexión segura cifrada</p>
+                                        </motion.div>
+                                    )}
+                                    {pasarelaPaso === 2 && (
+                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex flex-col items-center">
+                                            <Loader2 className="text-orange-500 w-16 h-16 animate-spin mb-4" />
+                                            <h3 className="text-xl font-black text-gray-900 uppercase">Verificando Fondos</h3>
+                                            <p className="text-sm text-gray-500 mt-2">Procesando la transacción con el emisor</p>
+                                        </motion.div>
+                                    )}
+                                    {pasarelaPaso === 3 && (
+                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex flex-col items-center">
+                                            <XCircle className="text-red-500 w-20 h-20 mb-4" />
+                                            <h3 className="text-2xl font-black text-red-600 uppercase">Transacción Rechazada</h3>
+                                            <p className="text-sm text-red-500 mt-2 font-bold">Error: FONDOS INSUFICIENTES</p>
+                                        </motion.div>
+                                    )}
+                                    {pasarelaPaso === 4 && (
+                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex flex-col items-center">
+                                            <AlertCircle className="text-red-500 w-20 h-20 mb-4" />
+                                            <h3 className="text-2xl font-black text-red-600 uppercase">Transacción Rechazada</h3>
+                                            <p className="text-sm text-red-500 mt-2 font-bold">Error: TARJETA RETENIDA O BLOQUEADA</p>
+                                        </motion.div>
+                                    )}
+                                    {pasarelaPaso === 5 && (
+                                        <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} className="flex flex-col items-center">
+                                            <ShieldCheck className="text-green-500 w-20 h-20 mb-4" />
+                                            <h3 className="text-2xl font-black text-green-600 uppercase">Pago Aprobado</h3>
+                                            <p className="text-sm text-green-500 mt-2 font-bold">Transacción exitosa y autorizada</p>
+                                        </motion.div>
+                                    )}
+                                </motion.div>
+                            )}
+                        </AnimatePresence>
+
                         <div className="flex-1 space-y-6">
+                            {/* Tipo de Entrega */}
+                            <div className="flex gap-4">
+                                <button onClick={() => setTipoEntrega('Mesa')} className={`flex-1 p-2 md:p-3 rounded-xl md:rounded-2xl border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${tipoEntrega === 'Mesa' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-100 hover:border-gray-200 text-gray-400'}`}>
+                                    <Utensils size={18}/>
+                                    <span className="font-black text-xs md:text-sm uppercase">Para Mesa</span>
+                                </button>
+                                <button onClick={() => setTipoEntrega('Llevar')} className={`flex-1 p-2 md:p-3 rounded-xl md:rounded-2xl border-2 transition-all flex items-center justify-center gap-2 md:gap-3 ${tipoEntrega === 'Llevar' ? 'border-orange-500 bg-orange-50 text-orange-600' : 'border-gray-100 hover:border-gray-200 text-gray-400'}`}>
+                                    <ShoppingBag size={18}/>
+                                    <span className="font-black text-xs md:text-sm uppercase">Para Llevar</span>
+                                </button>
+                            </div>
+
                             {/* Metodo Select */}
                             <div className="flex gap-4">
-                                <button onClick={() => setMetodoPago('Efectivo')} className={`flex-1 p-3 md:p-4 rounded-2xl md:rounded-3xl border-2 transition-all flex items-center gap-2 md:gap-3 ${metodoPago === 'Efectivo' ? 'border-orange-500 bg-orange-50' : 'border-gray-100 hover:border-gray-200'}`}>
+                                <button onClick={() => { setMetodoPago('Efectivo'); setCardError(null); }} className={`flex-1 p-3 md:p-4 rounded-2xl md:rounded-3xl border-2 transition-all flex items-center gap-2 md:gap-3 ${metodoPago === 'Efectivo' ? 'border-orange-500 bg-orange-50' : 'border-gray-100 hover:border-gray-200'}`}>
                                     <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center shrink-0 ${metodoPago === 'Efectivo' ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-gray-100 text-gray-400'}`}><DollarSign size={18}/></div>
                                     <div className="text-left"><p className="text-[7px] md:text-[8px] font-black uppercase text-gray-400">Pago con</p><p className="font-black text-xs md:text-sm uppercase">Efectivo</p></div>
                                 </button>
-                                <button onClick={() => setMetodoPago('QR')} className={`flex-1 p-2 md:p-3 rounded-2xl md:rounded-3xl border-2 transition-all flex items-center gap-2 md:gap-3 ${metodoPago === 'QR' ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}>
+                                <button onClick={() => { setMetodoPago('QR'); setCardError(null); }} className={`flex-1 p-2 md:p-3 rounded-2xl md:rounded-3xl border-2 transition-all flex items-center gap-2 md:gap-3 ${metodoPago === 'QR' ? 'border-blue-500 bg-blue-50' : 'border-gray-100 hover:border-gray-200'}`}>
                                     <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center shrink-0 ${metodoPago === 'QR' ? 'bg-blue-500 text-white shadow-lg shadow-blue-100' : 'bg-gray-100 text-gray-400'}`}><QrCode size={18}/></div>
-                                    <div className="text-left"><p className="text-[7px] md:text-[8px] font-black uppercase text-gray-400">Pago con</p><p className="font-black text-xs md:text-sm uppercase">QR</p></div>
+                                    <div className="text-left"><p className="text-[7px] md:text-[8px] font-black uppercase text-gray-400">Pago con</p><p className="font-black text-xs md:text-sm uppercase">QR Simple</p></div>
                                 </button>
-                                <button onClick={() => setMetodoPago('Tarjeta')} className={`flex-1 p-2 md:p-3 rounded-2xl md:rounded-3xl border-2 transition-all flex items-center gap-2 md:gap-3 ${metodoPago === 'Tarjeta' ? 'border-purple-500 bg-purple-50' : 'border-gray-100 hover:border-gray-200'}`}>
+                                <button onClick={() => { setMetodoPago('Tarjeta'); }} className={`flex-1 p-2 md:p-3 rounded-2xl md:rounded-3xl border-2 transition-all flex items-center gap-2 md:gap-3 ${metodoPago === 'Tarjeta' ? 'border-purple-500 bg-purple-50' : 'border-gray-100 hover:border-gray-200'}`}>
                                     <div className={`w-8 h-8 md:w-10 md:h-10 rounded-xl flex items-center justify-center shrink-0 ${metodoPago === 'Tarjeta' ? 'bg-purple-500 text-white shadow-lg shadow-purple-100' : 'bg-gray-100 text-gray-400'}`}><CreditCard size={18}/></div>
                                     <div className="text-left"><p className="text-[7px] md:text-[8px] font-black uppercase text-gray-400">Pago con</p><p className="font-black text-xs md:text-sm uppercase">Tarjeta</p></div>
                                 </button>
@@ -446,73 +601,127 @@ const POSPage = () => {
                                     </motion.div>
                                 ) : metodoPago === 'QR' ? (
                                     <motion.div key="qr" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-blue-50/50 p-6 rounded-2xl md:rounded-[32px] border-2 border-blue-100 flex flex-col items-center text-center space-y-4">
-                                        <div className="w-32 h-32 md:w-40 md:h-40 bg-white rounded-2xl flex items-center justify-center shadow-md p-2">
-                                            <img src="https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SaborXpress-Pago" alt="QR de Pago" className="w-full h-full object-contain" />
+                                        
+                                        <div className="relative w-40 h-40 flex items-center justify-center">
+                                            {/* Radar animado si está esperando */}
+                                            {qrStep === 1 && (
+                                                <>
+                                                    <div className="absolute w-full h-full border-4 border-blue-400 rounded-2xl animate-ping opacity-20"></div>
+                                                    <div className="absolute w-[120%] h-[120%] border-2 border-blue-300 rounded-2xl animate-ping opacity-10" style={{ animationDelay: '0.5s' }}></div>
+                                                </>
+                                            )}
+                                            <div className="w-full h-full bg-white rounded-2xl flex items-center justify-center shadow-md p-2 z-10">
+                                                <img 
+                                                    src={`https://api.qrserver.com/v1/create-qr-code/?size=150x150&data=SaborXpress-Monto-${total}-Fecha-${new Date().getTime()}`} 
+                                                    alt="QR Dinámico" 
+                                                    className={`w-full h-full object-contain transition-all duration-500 ${qrStep === 2 ? 'opacity-30' : 'opacity-100'}`} 
+                                                />
+                                                {qrStep === 2 && (
+                                                    <div className="absolute inset-0 flex items-center justify-center z-20">
+                                                        <CheckCircle className="text-green-500 w-16 h-16" />
+                                                    </div>
+                                                )}
+                                            </div>
                                         </div>
-                                        <div className="space-y-1">
-                                            <h4 className="text-base md:text-lg font-black text-blue-900 italic uppercase">Escanea para pagar</h4>
-                                            <p className="text-[10px] text-blue-600 font-bold max-w-xs">Verifica en tu cuenta que el pago haya ingresado antes de confirmar.</p>
+
+                                        <div className="space-y-1 h-12">
+                                            {qrStep === 0 && <h4 className="text-base md:text-lg font-black text-blue-900 italic uppercase">Esperando generar QR</h4>}
+                                            {qrStep === 1 && (
+                                                <div className="flex flex-col items-center text-blue-600">
+                                                    <span className="text-xs font-bold animate-pulse">Consultando estado con el Banco...</span>
+                                                    <span className="text-[10px]">El cliente debe escanear para pagar Bs. {total.toFixed(2)}</span>
+                                                </div>
+                                            )}
+                                            {qrStep === 2 && <h4 className="text-base md:text-lg font-black text-green-600 italic uppercase">¡PAGO RECIBIDO EXITOSAMENTE!</h4>}
                                         </div>
+
                                         <button 
-                                            disabled={isVerifying || qrConfirmado}
-                                            onClick={() => {
-                                                setIsVerifying(true);
-                                                setTimeout(() => {
-                                                    setIsVerifying(false);
-                                                    setQrConfirmado(true);
-                                                }, 2000);
-                                            }} 
-                                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black transition-all ${qrConfirmado ? 'bg-green-500 text-white shadow-lg' : 'bg-white text-blue-500 border border-blue-200 hover:bg-blue-50'}`}
+                                            disabled={qrStep === 1 || qrConfirmado}
+                                            onClick={iniciarPagoQR} 
+                                            className={`flex items-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black transition-all ${qrConfirmado ? 'bg-green-500 text-white shadow-lg' : 'bg-blue-600 text-white shadow-lg shadow-blue-200 hover:bg-blue-700'}`}
                                         >
-                                            {isVerifying ? <><Loader2 size={14} className="animate-spin" /> VERIFICANDO...</> : qrConfirmado ? <><CheckCircle size={14}/> PAGO CONFIRMADO</> : <><Info size={14}/> VERIFICAR RECEPCIÓN</>}
+                                            {qrStep === 1 ? <><Loader2 size={14} className="animate-spin" /> ESPERANDO PAGO...</> : qrStep === 2 ? <><CheckCircle size={14}/> LISTO</> : <><QrCode size={14}/> GENERAR Y ESPERAR PAGO</>}
                                         </button>
                                     </motion.div>
                                 ) : (
-                                    <motion.div key="tarjeta" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="bg-purple-50/50 p-6 rounded-2xl md:rounded-[32px] border-2 border-purple-100 flex flex-col space-y-4">
-                                        <div className="flex items-center gap-3">
-                                            <div className="w-10 h-10 bg-white rounded-xl flex items-center justify-center text-purple-500 shadow-md">
-                                                <CreditCard size={20} />
-                                            </div>
-                                            <div>
-                                                <h4 className="text-sm font-black text-purple-900 italic uppercase">Datos de Tarjeta</h4>
-                                                <p className="text-[9px] text-purple-600 font-bold">Procesamiento de cobro seguro</p>
-                                            </div>
-                                        </div>
+                                    <motion.div key="tarjeta" initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -10 }} className="flex flex-col space-y-6">
                                         
-                                        <div className="space-y-3 bg-white p-4 rounded-2xl border border-purple-100">
+                                        {/* CSS 3D Card Visualizer */}
+                                        <div 
+                                            className="relative w-full max-w-[320px] mx-auto h-[180px] cursor-pointer"
+                                            style={{ perspective: '1000px' }}
+                                            onClick={() => setIsFlipped(!isFlipped)}
+                                        >
+                                            <motion.div 
+                                                className="w-full h-full absolute"
+                                                initial={false}
+                                                animate={{ rotateY: isFlipped ? 180 : 0 }}
+                                                transition={{ duration: 0.6, type: "spring", stiffness: 260, damping: 20 }}
+                                                style={{ transformStyle: 'preserve-3d' }}
+                                            >
+                                                {/* Card Front */}
+                                                <div className="absolute w-full h-full rounded-2xl p-5 flex flex-col justify-between shadow-2xl text-white bg-gradient-to-br from-gray-900 to-gray-800" style={{ backfaceVisibility: 'hidden' }}>
+                                                    <div className="flex justify-between items-start">
+                                                        <div className="w-10 h-8 bg-yellow-200/80 rounded-md"></div>
+                                                        <div className="font-black italic text-lg opacity-80">{getCardBrand()}</div>
+                                                    </div>
+                                                    <div className="space-y-2">
+                                                        <div className="text-xl tracking-[0.2em] font-mono shadow-sm">
+                                                            {tarjetaNumero || '•••• •••• •••• ••••'}
+                                                        </div>
+                                                        <div className="flex justify-between items-end text-[10px] uppercase tracking-wider">
+                                                            <div>
+                                                                <span className="opacity-50 block text-[8px]">Titular</span>
+                                                                <span className="font-bold">{tarjetaNombre || 'NOMBRE DEL CLIENTE'}</span>
+                                                            </div>
+                                                            <div className="text-right">
+                                                                <span className="opacity-50 block text-[8px]">Expira</span>
+                                                                <span className="font-bold">{tarjetaExp || 'MM/YY'}</span>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+
+                                                {/* Card Back */}
+                                                <div className="absolute w-full h-full rounded-2xl flex flex-col shadow-2xl text-white bg-gradient-to-br from-gray-800 to-gray-900 overflow-hidden" style={{ backfaceVisibility: 'hidden', transform: 'rotateY(180deg)' }}>
+                                                    <div className="w-full h-10 bg-black mt-6 opacity-80"></div>
+                                                    <div className="px-5 mt-4">
+                                                        <div className="w-full h-8 bg-white flex items-center justify-end px-3 text-black font-mono text-sm rounded">
+                                                            {tarjetaCVV || '•••'}
+                                                        </div>
+                                                        <p className="text-[8px] opacity-50 mt-2 text-right">Código de seguridad (CVV)</p>
+                                                    </div>
+                                                </div>
+                                            </motion.div>
+                                        </div>
+
+                                        {/* Card Inputs */}
+                                        <div className="space-y-3 bg-gray-50/50 p-4 rounded-2xl border border-gray-100">
+                                            {cardError && (
+                                                <div className="bg-red-50 text-red-600 text-[10px] font-bold p-2 rounded-lg flex items-center gap-2 border border-red-100">
+                                                    <AlertCircle size={14}/> {cardError}
+                                                </div>
+                                            )}
                                             <div className="space-y-1">
                                                 <label className="text-[9px] font-black text-gray-400 uppercase">Titular de la Tarjeta</label>
-                                                <input type="text" value={tarjetaNombre} onChange={e => setTarjetaNombre(e.target.value)} placeholder="Ej: Juan Perez" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-purple-500 transition-all uppercase" />
+                                                <input type="text" onFocus={() => setIsFlipped(false)} value={tarjetaNombre} onChange={e => setTarjetaNombre(e.target.value)} placeholder="Ej: Juan Perez" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-purple-500 transition-all uppercase" />
                                             </div>
                                             <div className="space-y-1">
-                                                <label className="text-[9px] font-black text-gray-400 uppercase">Número de Tarjeta</label>
-                                                <input type="text" value={tarjetaNumero} onChange={e => setTarjetaNumero(e.target.value.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1 '))} maxLength={19} placeholder="0000 0000 0000 0000" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-purple-500 transition-all" />
+                                                <label className="text-[9px] font-black text-gray-400 uppercase">Número de Tarjeta (Prueba: 4532 7890 1234 5671)</label>
+                                                <input type="text" onFocus={() => setIsFlipped(false)} value={tarjetaNumero} onChange={e => {setTarjetaNumero(e.target.value.replace(/\D/g, '').replace(/(\d{4})(?=\d)/g, '$1 ')); setCardError(null);}} maxLength={19} placeholder="4532 0000 0000 0000" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-purple-500 transition-all" />
                                             </div>
                                             <div className="grid grid-cols-2 gap-3">
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-black text-gray-400 uppercase">Expira</label>
-                                                    <input type="text" value={tarjetaExp} onChange={e => setTarjetaExp(e.target.value.replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1/'))} maxLength={5} placeholder="MM/YY" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-purple-500 transition-all" />
+                                                    <input type="text" onFocus={() => setIsFlipped(false)} value={tarjetaExp} onChange={e => setTarjetaExp(e.target.value.replace(/\D/g, '').replace(/(\d{2})(?=\d)/g, '$1/'))} maxLength={5} placeholder="MM/YY" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-purple-500 transition-all" />
                                                 </div>
                                                 <div className="space-y-1">
                                                     <label className="text-[9px] font-black text-gray-400 uppercase">CVV</label>
-                                                    <input type="password" value={tarjetaCVV} onChange={e => setTarjetaCVV(e.target.value.replace(/\D/g, ''))} maxLength={4} placeholder="•••" className="w-full px-3 py-2 bg-gray-50 border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-purple-500 transition-all" />
+                                                    <input type="password" onFocus={() => setIsFlipped(true)} value={tarjetaCVV} onChange={e => setTarjetaCVV(e.target.value.replace(/\D/g, ''))} maxLength={4} placeholder="•••" className="w-full px-3 py-2 bg-white border border-gray-200 rounded-xl text-xs font-medium outline-none focus:border-purple-500 transition-all" />
                                                 </div>
                                             </div>
                                         </div>
 
-                                        <button 
-                                            disabled={isVerifying || tarjetaConfirmada || !tarjetaNombre || tarjetaNumero.length < 15 || tarjetaExp.length < 5 || tarjetaCVV.length < 3}
-                                            onClick={() => {
-                                                setIsVerifying(true);
-                                                setTimeout(() => {
-                                                    setIsVerifying(false);
-                                                    setTarjetaConfirmada(true);
-                                                }, 2500);
-                                            }} 
-                                            className={`w-full flex items-center justify-center gap-2 px-6 py-3 rounded-xl text-[10px] font-black transition-all ${tarjetaConfirmada ? 'bg-green-500 text-white shadow-lg' : 'bg-purple-500 text-white shadow-lg shadow-purple-200 hover:bg-purple-600 disabled:bg-purple-200 disabled:shadow-none'}`}
-                                        >
-                                            {isVerifying ? <><Loader2 size={14} className="animate-spin" /> PROCESANDO CON EL BANCO...</> : tarjetaConfirmada ? <><CheckCircle size={14}/> TRANSACCIÓN APROBADA</> : <><CreditCard size={14}/> PROCESAR PAGO</>}
-                                        </button>
                                     </motion.div>
                                 )}
                             </AnimatePresence>
@@ -590,19 +799,31 @@ const POSPage = () => {
                         </div>
 
                         {/* Actions - Fixed at the bottom of the panel */}
-                        <div className="flex gap-3 pt-6 mt-auto bg-white sticky bottom-0">
+                        <div className="flex gap-3 pt-6 mt-auto bg-white sticky bottom-0 z-40 border-t border-gray-100">
                             <button onClick={() => setShowCheckout(false)} className="px-8 py-4 bg-gray-50 hover:bg-gray-100 text-gray-400 font-black rounded-2xl transition-all uppercase text-[10px] tracking-widest">Cancelar</button>
-                            <button 
-                                disabled={submitting || isVerifying || (metodoPago === 'Efectivo' && !puedePagarEfectivo) || (metodoPago === 'QR' && !qrConfirmado) || (metodoPago === 'Tarjeta' && !tarjetaConfirmada)} 
-                                onClick={handleFinalizarVenta} 
-                                className={`flex-1 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95 uppercase italic ${
-                                    metodoPago === 'Efectivo' ? 'bg-orange-500 text-white shadow-orange-100' : 
-                                    metodoPago === 'Tarjeta' ? 'bg-purple-500 text-white shadow-purple-100' : 'bg-blue-600 text-white shadow-blue-100'
-                                } disabled:bg-gray-100 disabled:text-gray-300 disabled:shadow-none`}
-                            >
-                                {submitting ? <Loader className="animate-spin size-4" /> : (metodoPago === 'Efectivo' ? <DollarSign size={18}/> : metodoPago === 'Tarjeta' ? <CreditCard size={18} /> : <CheckCircle size={18}/>)}
-                                FINALIZAR VENTA
-                            </button>
+                            
+                            {metodoPago === 'Tarjeta' ? (
+                                <button 
+                                    disabled={submitting || isProcessingModal || (!tarjetaConfirmada && (!tarjetaNombre || tarjetaNumero.length < 15 || tarjetaExp.length < 5 || tarjetaCVV.length < 3))} 
+                                    onClick={tarjetaConfirmada ? handleFinalizarVenta : handleProcesarTarjeta} 
+                                    className={`flex-1 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95 uppercase italic ${
+                                        tarjetaConfirmada ? 'bg-green-500 text-white shadow-green-100' : 'bg-purple-500 text-white shadow-purple-100'
+                                    } disabled:bg-gray-100 disabled:text-gray-300 disabled:shadow-none`}
+                                >
+                                    {tarjetaConfirmada ? <><CheckCircle size={18}/> FINALIZAR VENTA</> : <><CreditCard size={18} /> PROCESAR PAGO SEGURO</>}
+                                </button>
+                            ) : (
+                                <button 
+                                    disabled={submitting || (metodoPago === 'Efectivo' && !puedePagarEfectivo) || (metodoPago === 'QR' && !qrConfirmado)} 
+                                    onClick={handleFinalizarVenta} 
+                                    className={`flex-1 py-4 rounded-2xl font-black text-sm flex items-center justify-center gap-2 shadow-xl transition-all active:scale-95 uppercase italic ${
+                                        metodoPago === 'Efectivo' ? 'bg-orange-500 text-white shadow-orange-100' : 'bg-blue-600 text-white shadow-blue-100'
+                                    } disabled:bg-gray-100 disabled:text-gray-300 disabled:shadow-none`}
+                                >
+                                    {submitting ? <Loader className="animate-spin size-4" /> : (metodoPago === 'Efectivo' ? <DollarSign size={18}/> : <CheckCircle size={18}/>)}
+                                    FINALIZAR VENTA
+                                </button>
+                            )}
                         </div>
                     </div>
                 </motion.div>

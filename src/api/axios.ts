@@ -10,7 +10,7 @@ const axiosInstance = axios.create({
     Accept: 'application/json',
     'ngrok-skip-browser-warning': 'true',
   },
-  timeout: 10000,
+  timeout: 60000,
 });
 
 // ── Request interceptor: adjunta el Bearer Token automáticamente ──────────────

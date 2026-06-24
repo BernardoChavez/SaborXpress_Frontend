@@ -260,6 +260,7 @@ const TicketsPage = () => {
           </>
         )}
       </AnimatePresence>
+
     </div>
   );
 };

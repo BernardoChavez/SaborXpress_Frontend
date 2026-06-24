@@ -221,6 +221,84 @@ const ReportesPage = () => {
     doc.save(`consulta_voz_${voiceResultType.toLowerCase()}.pdf`);
   };
 
+  // Exportar Reporte Dinámico
+  const exportDinamicoCSV = () => {
+    if (!dinamicoData) return;
+    
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    // Ventas por día
+    csvContent += "Ventas por Dia\n";
+    csvContent += "Fecha;Total(Bs)\n";
+    dinamicoData.ventas_dias.forEach((d: any) => {
+      csvContent += `${d.fecha};${d.total}\n`;
+    });
+    
+    csvContent += "\nMetodos de Pago\n";
+    csvContent += "Metodo;Cantidad\n";
+    dinamicoData.ventas_metodos.forEach((m: any) => {
+      csvContent += `${m.nombre};${m.cantidad}\n`;
+    });
+    
+    csvContent += "\nInventario Critico\n";
+    csvContent += "Producto;Tipo;Stock Actual;Minimo Requerido\n";
+    dinamicoData.inventario_critico.forEach((i: any) => {
+      csvContent += `${i.nombre};${i.tipo};${i.stock} ${i.unidad_medida};${i.stock_minimo} ${i.unidad_medida}\n`;
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `reporte_dinamico_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    link.remove();
+  };
+
+  const exportDinamicoPDF = () => {
+    if (!dinamicoData) return;
+    const doc = new jsPDF();
+    const dateStr = new Date().toISOString().split('T')[0];
+    
+    doc.text(`Reporte Dinamico (${dateStr})`, 14, 15);
+    
+    // Ventas por día
+    doc.setFontSize(12);
+    doc.text('Ventas por Dia (Ultimos 7 dias)', 14, 25);
+    autoTable(doc, {
+      startY: 30,
+      head: [['Fecha', 'Total (Bs)']],
+      body: dinamicoData.ventas_dias.map((d: any) => [d.fecha, d.total]),
+      styles: { fontSize: 8 }
+    });
+    
+    // Metodos de pago
+    let nextY = (doc as any).lastAutoTable.finalY + 10;
+    doc.text('Metodos de Pago', 14, nextY);
+    autoTable(doc, {
+      startY: nextY + 5,
+      head: [['Metodo', 'Cantidad de Transacciones']],
+      body: dinamicoData.ventas_metodos.map((m: any) => [m.nombre, m.cantidad]),
+      styles: { fontSize: 8 }
+    });
+    
+    // Inventario Critico
+    nextY = (doc as any).lastAutoTable.finalY + 10;
+    if (nextY > 250) {
+      doc.addPage();
+      nextY = 20;
+    }
+    doc.text('Inventario Critico', 14, nextY);
+    autoTable(doc, {
+      startY: nextY + 5,
+      head: [['Producto', 'Tipo', 'Stock Actual', 'Minimo Requerido']],
+      body: dinamicoData.inventario_critico.map((i: any) => [i.nombre, i.tipo, `${i.stock} ${i.unidad_medida}`, `${i.stock_minimo} ${i.unidad_medida}`]),
+      styles: { fontSize: 8 }
+    });
+
+    doc.save(`reporte_dinamico_${dateStr}.pdf`);
+  };
+
   return (
     <div className="space-y-8 pb-10 max-w-7xl mx-auto">
       {/* ── Cabecera ─────────────────────────────────────────── */}
@@ -343,6 +421,10 @@ const ReportesPage = () => {
               </div>
             ) : dinamicoData ? (
               <div className="space-y-8">
+                <div className="flex justify-end gap-4">
+                  <button onClick={exportDinamicoCSV} className="flex items-center gap-2 py-2 px-4 bg-slate-800 hover:bg-slate-900 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md"><FileSpreadsheet size={14} /> Descargar CSV</button>
+                  <button onClick={exportDinamicoPDF} className="flex items-center gap-2 py-2 px-4 bg-emerald-600 hover:bg-emerald-700 text-white font-black text-xs uppercase tracking-widest rounded-xl transition-all shadow-md"><FileText size={14} /> Descargar PDF</button>
+                </div>
                 <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
                   {/* Gráfico de Ventas */}
                   <div className="bg-white p-6 rounded-3xl border border-gray-100 shadow-sm">

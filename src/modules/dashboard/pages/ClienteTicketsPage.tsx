@@ -123,7 +123,7 @@ const ClienteTicketsPage = () => {
                     <td className="p-4">
                       <div className="flex items-center gap-1.5">
                         <CreditCard size={12} className="text-slate-400" />
-                        {compra.metodo_pago}
+                        {compra.codigo_qr?.includes('Tarjeta') ? 'TARJETA' : compra.metodo_pago}
                       </div>
                     </td>
                     <td className="p-4 text-orange-600 font-black text-sm">
