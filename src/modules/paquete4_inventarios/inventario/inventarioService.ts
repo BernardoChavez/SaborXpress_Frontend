@@ -107,5 +107,45 @@ export const inventarioService = {
     registrarMerma: async (dto: { id_producto: number; cantidad: number; motivo: string }): Promise<any> => {
         const { data } = await axiosInstance.post('/inventario/mermas', dto);
         return data;
+    },
+
+    getAlertas: async (params: any = {}) => {
+        const { data } = await axiosInstance.get('/inventario/alertas', { params });
+        return data;
+    },
+    
+    getHistorialAlertas: async () => {
+        const { data } = await axiosInstance.get('/inventario/alertas/historial');
+        return data;
+    },
+
+    getConfigAlerta: async (tipo: string, id: number) => {
+        const { data } = await axiosInstance.get(`/inventario/alertas/config/${tipo}/${id}`);
+        return data;
+    },
+
+    configurarAlerta: async (payload: any) => {
+        const { data } = await axiosInstance.post('/inventario/alertas/configurar', payload);
+        return data;
+    },
+
+    marcarAlertaAtendida: async (id: number) => {
+        const { data } = await axiosInstance.patch(`/inventario/alertas/${id}/atender`);
+        return data;
+    },
+
+    reenviarCorreoAlerta: async (id: number) => {
+        const { data } = await axiosInstance.post(`/inventario/alertas/${id}/reenviar`);
+        return data;
+    },
+
+    deleteAlerta: async (id: number) => {
+        const { data } = await axiosInstance.delete(`/inventario/alertas/${id}`);
+        return data;
+    },
+
+    deleteConfigAlerta: async (tipo: string, id: number) => {
+        const { data } = await axiosInstance.delete(`/inventario/alertas/config/${tipo}/${id}`);
+        return data;
     }
 };

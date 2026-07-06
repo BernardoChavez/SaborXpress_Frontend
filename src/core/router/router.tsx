@@ -45,6 +45,8 @@ import { ResenasDashboardView } from '../../modules/paquete10_mesas_reservas_res
 import { FeedbackForm } from '../../modules/paquete10_mesas_reservas_resenas/pages/FeedbackForm';
 import CombosPage from '../../modules/paquete10_combos_promociones/pages/CombosPage';
 import PromocionesPage from '../../modules/paquete10_combos_promociones/pages/PromocionesPage';
+import CateringPage from '../../modules/paquete5_ventas/catering/pages/CateringPage';
+import { AlertasPage } from '../../modules/paquete4_inventarios/inventario/pages/AlertasPage';
 // Componente de Error Simple pero Elegante
 const GlobalErrorPage = () => (
     <div className="h-screen w-screen flex flex-col items-center justify-center bg-gray-50 p-10 text-center">
@@ -143,7 +145,9 @@ export const router = createBrowserRouter([
                         { path: 'admin/mesas', element: <MesasMapView /> },
                         { path: 'admin/resenas', element: <ResenasDashboardView /> },
                         { path: 'admin/combos', element: <CombosPage /> },
-                        { path: 'admin/promociones', element: <PromocionesPage /> }
+                        { path: 'admin/promociones', element: <PromocionesPage /> },
+                        { path: 'admin/catering', element: <CateringPage /> },
+                        { path: 'admin/alertas-inventario', element: <AlertasPage /> }
                     ]
                 },
 

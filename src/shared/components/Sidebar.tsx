@@ -98,7 +98,8 @@ const adminStructure: MenuItem[] = [
       { label: 'Inventario General', to: '/admin/inventario', icon: <Package size={18} />, permission: 'CU11:ver' },
       { label: 'Insumos Procesados', to: '/admin/insumos', icon: <Package size={18} />, permission: 'CU12:ver' },
       { label: 'Proveedores', to: '/admin/proveedores', icon: <Truck size={18} />, permission: 'CU10:ver' },
-      { label: 'Fichas/Recetas', to: '/admin/recetas', icon: <ScrollText size={18} />, permission: 'CU35:ver' }
+      { label: 'Fichas/Recetas', to: '/admin/recetas', icon: <ScrollText size={18} />, permission: 'CU35:ver' },
+      { label: 'Alertas de Inventario', to: '/admin/alertas-inventario', icon: <Package size={18} />, adminOnly: true }
     ]
   },
   {
@@ -108,7 +109,8 @@ const adminStructure: MenuItem[] = [
     items: [
       { label: 'Caja', to: '/caja', icon: <Wallet size={18} />, permission: 'CU15:ver' },
       { label: 'Venta (POS)', to: '/pos', icon: <ShoppingBag size={18} />, permission: 'CU16:ver' },
-      { label: 'Caja Chica', to: '/caja-chica', icon: <Wallet size={18} />, permission: 'CU32:ver' }
+      { label: 'Caja Chica', to: '/caja-chica', icon: <Wallet size={18} />, permission: 'CU32:ver' },
+      { label: 'Servicios de Catering', to: '/admin/catering', icon: <ScrollText size={18} />, adminOnly: true }
     ]
   },
   {
