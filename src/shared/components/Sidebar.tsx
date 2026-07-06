@@ -95,7 +95,8 @@ const adminStructure: MenuItem[] = [
       { label: 'Inventario General', to: '/admin/inventario', icon: <Package size={18} />, permission: 'CU11:ver' },
       { label: 'Insumos Procesados', to: '/admin/insumos', icon: <Package size={18} />, permission: 'CU12:ver' },
       { label: 'Proveedores', to: '/admin/proveedores', icon: <Truck size={18} />, permission: 'CU10:ver' },
-      { label: 'Fichas/Recetas', to: '/admin/recetas', icon: <ScrollText size={18} />, permission: 'CU35:ver' }
+      { label: 'Fichas/Recetas', to: '/admin/recetas', icon: <ScrollText size={18} />, permission: 'CU35:ver' },
+      { label: 'Alertas de Inventario', to: '/admin/alertas-inventario', icon: <Package size={18} />, adminOnly: true }
     ]
   },
   {
@@ -152,6 +153,14 @@ const adminStructure: MenuItem[] = [
     items: [
       { label: 'Mapa de Mesas', to: '/admin/mesas', icon: <LayoutDashboard size={18} />, permission: 'CU16:ver' }, // Using CU16 as temporary since CU37 isn't seeded
       { label: 'Reseñas', to: '/admin/resenas', icon: <Star size={18} />, permission: 'CU16:ver' }
+    ]
+  },
+  {
+    type: 'group',
+    label: 'P11: Servicios Especiales',
+    icon: <Package size={20} />,
+    items: [
+      { label: 'Servicios de Catering', to: '/admin/catering', icon: <ScrollText size={18} />, adminOnly: true }
     ]
   }
 ];
