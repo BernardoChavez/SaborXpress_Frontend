@@ -163,13 +163,28 @@ const ComandaTicket = ({ comanda, priority, loading, onUpdate }: CardProps) => {
                 </div>
                 
                 <div className="space-y-3">
-                    {(comanda.venta?.detalles || []).map((det: any, i: number) => (
-                        <div key={i} className="flex text-xs leading-none">
-                            <span className="w-8 font-black">{det.cantidad}</span>
-                            <span className="flex-1 font-bold uppercase pr-2">{det.producto?.nombre}</span>
-                            <span className="w-12 text-right">{(det.cantidad * (det.precio_unitario || 0)).toFixed(0)}</span>
+                    {(comanda.venta?.detalles || []).map((det: any, i: number) => {
+                        const esCombo = !!det.combo;
+                        const nombrePrincipal = det.producto?.nombre || det.combo?.nombre || 'DESCONOCIDO';
+                        
+                        return (
+                        <div key={i} className="mb-2">
+                            <div className="flex text-xs leading-none mb-1">
+                                <span className="w-8 font-black">{det.cantidad}</span>
+                                <span className="flex-1 font-bold uppercase pr-2 text-gray-900">{nombrePrincipal}</span>
+                                <span className="w-12 text-right">{(det.cantidad * (det.precio_unitario || 0)).toFixed(0)}</span>
+                            </div>
+                            {esCombo && det.combo?.productos && (
+                                <div className="pl-8 text-[10px] font-bold text-gray-500 uppercase flex flex-col gap-0.5">
+                                    {det.combo.productos.map((cp: any, idx: number) => (
+                                        <div key={idx} className="flex items-center gap-1">
+                                            <span>- {cp.cantidad * det.cantidad}x {cp.producto?.nombre}</span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
                         </div>
-                    ))}
+                    )})}
                 </div>
             </div>
 

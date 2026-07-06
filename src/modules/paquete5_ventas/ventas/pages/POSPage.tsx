@@ -27,18 +27,25 @@ import {
   Loader2,
   XCircle,
   Wifi,
-  ShieldCheck
+  ShieldCheck,
+  Gift
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { categoriaService, productoService } from '../../../paquete3_configuracion/catalogo/catalogoService';
 import { cajaService } from '../services/cajaService';
 import { ventaService } from '../services/ventaService';
+import { marketingApi } from '../../../../api/services/marketingService';
 import { useNavigate } from 'react-router-dom';
 import type { Categoria, Producto } from '../../../paquete3_configuracion/catalogo/types/catalogo.types';
 import TicketModal from '../components/TicketModal';
 
-interface CartItem extends Producto {
+interface CartItem {
+  id: number;
+  nombre: string;
+  precio_venta: number | string;
   cantidad: number;
+  imagen_url?: string | null;
+  isCombo?: boolean;
 }
 
 const POSPage = () => {
@@ -46,7 +53,9 @@ const POSPage = () => {
   const [cajaAbierta, setCajaAbierta] = useState<boolean | null>(null);
   const [categorias, setCategorias] = useState<Categoria[]>([]);
   const [productos, setProductos] = useState<Producto[]>([]);
-  const [selectedCat, setSelectedCat] = useState<number | 'all'>('all');
+  const [combos, setCombos] = useState<any[]>([]);
+  const [promociones, setPromociones] = useState<any[]>([]);
+  const [selectedCat, setSelectedCat] = useState<number | 'all' | 'combos'>('all');
   const [search, setSearch] = useState('');
   const [cart, setCart] = useState<CartItem[]>([]);
   const [loading, setLoading] = useState(true);
@@ -105,40 +114,81 @@ const POSPage = () => {
 
   const loadCatalog = async () => {
     try {
-      const [cats, prods] = await Promise.all([
+      const [cats, prods, combosData, promosData] = await Promise.all([
         categoriaService.getAll(),
-        productoService.getAll()
+        productoService.getAll(),
+        marketingApi.getCombos(),
+        marketingApi.getPromociones()
       ]);
       setCategorias(cats);
       setProductos(prods);
+      setCombos(combosData);
+      setPromociones(promosData);
     } catch (e) {
         console.error(e);
     }
   };
 
-  const addToCart = (prod: Producto) => {
+  const addToCart = (item: any) => {
     setCart(prev => {
-      const exists = prev.find(i => i.id === prod.id);
-      if (exists) return prev.map(i => i.id === prod.id ? { ...i, cantidad: i.cantidad + 1 } : i);
-      return [...prev, { ...prod, cantidad: 1 }];
+      const exists = prev.find(i => i.id === item.id && !!i.isCombo === !!item.isCombo);
+      if (exists) return prev.map(i => (i.id === item.id && !!i.isCombo === !!item.isCombo) ? { ...i, cantidad: i.cantidad + 1 } : i);
+      return [...prev, { ...item, cantidad: 1 }];
     });
   };
 
-  const updateQty = (id: number, delta: number) => {
+  const updateQty = (id: number, isCombo: boolean, delta: number) => {
     setCart(prev => {
-        const item = prev.find(i => i.id === id);
+        const item = prev.find(i => i.id === id && !!i.isCombo === !!isCombo);
         if (item && item.cantidad === 1 && delta === -1) {
-            return prev.filter(i => i.id !== id);
+            return prev.filter(i => !(i.id === id && !!i.isCombo === !!isCombo));
         }
-        return prev.map(i => i.id === id ? { ...i, cantidad: i.cantidad + delta } : i);
+        return prev.map(i => (i.id === id && !!i.isCombo === !!isCombo) ? { ...i, cantidad: i.cantidad + delta } : i);
     });
   };
 
-  const removeFromCart = (id: number) => {
-    setCart(prev => prev.filter(i => i.id !== id));
+  const removeFromCart = (id: number, isCombo: boolean) => {
+    setCart(prev => prev.filter(i => !(i.id === id && !!i.isCombo === !!isCombo)));
   };
 
-  const total = cart.reduce((sum, i) => sum + (Number(i.precio_venta) * i.cantidad), 0);
+  const todayName = ['Domingo', 'Lunes', 'Martes', 'Miercoles', 'Jueves', 'Viernes', 'Sabado'][new Date().getDay()];
+
+  const getLineItemPrice = (item: CartItem) => {
+    const originalPrice = Number(item.precio_venta);
+    if (item.isCombo) {
+        return { precio_unitario_efectivo: originalPrice, subtotal: originalPrice * item.cantidad, descuento_aplicado: null };
+    }
+
+    const promo = promociones.find(p => {
+        if (!p.estado || Number(p.estado) === 0) return false;
+        if (p.fecha_inicio && new Date() < new Date(p.fecha_inicio)) return false;
+        if (p.fecha_fin && new Date() > new Date(p.fecha_fin)) return false;
+        if (p.dias_aplicables && p.dias_aplicables.length > 0 && !p.dias_aplicables.includes(todayName)) return false;
+        return p.aplicaciones?.some((a: any) => a.aplicable_type.includes('Producto') && Number(a.aplicable_id) === Number(item.id));
+    });
+
+    if (!promo) {
+        return { precio_unitario_efectivo: originalPrice, subtotal: originalPrice * item.cantidad, descuento_aplicado: null };
+    }
+
+    let subtotal = originalPrice * item.cantidad;
+    if (promo.tipo_descuento === 'porcentaje') {
+        const perc = Number(promo.valor_descuento) / 100;
+        subtotal = subtotal - (subtotal * perc);
+    } else if (promo.tipo_descuento === 'monto_fijo') {
+        const fijo = Number(promo.valor_descuento);
+        subtotal = Math.max(0, subtotal - (fijo * item.cantidad));
+    } else if (promo.tipo_descuento === '2x1') {
+        const itemsToPay = Math.ceil(item.cantidad / 2);
+        subtotal = itemsToPay * originalPrice;
+    }
+
+    return { precio_unitario_efectivo: subtotal / item.cantidad, subtotal, descuento_aplicado: promo.nombre };
+  };
+
+  const calculatedCart = cart.map(i => ({ ...i, ...getLineItemPrice(i) }));
+  const total = calculatedCart.reduce((sum, i) => sum + i.subtotal, 0);
+
   const cambio = Math.max(0, Number(montoRecibido) - total);
   const puedePagarEfectivo = Number(montoRecibido) >= total;
 
@@ -241,11 +291,12 @@ const POSPage = () => {
       const res = await ventaService.registrar({
         metodo_pago: metodoPago === 'Tarjeta' ? 'QR' : (metodoPago === 'QR' ? 'QR' : 'Efectivo'),
         tipo_entrega: tipoEntrega,
-        codigo_qr: metodoPago === 'Tarjeta' ? 'Tarjeta-POS' : (metodoPago === 'QR' ? 'QR-POS' : undefined),
-        detalles: cart.map(i => ({
-          id_producto: i.id,
+        codigo_qr: metodoPago === 'Tarjeta' ? 'Tarjeta-POS' : (metodoPago === 'QR' ? 'QR-POS' : null),
+        detalles: calculatedCart.map(i => ({
+          id_producto: i.isCombo ? null : i.id,
+          id_combo: i.isCombo ? i.id : null,
           cantidad: i.cantidad,
-          precio_unitario: Number(i.precio_venta)
+          precio_unitario: i.precio_unitario_efectivo
         })),
         VentaEstado: ventaEstado,
         requiere_factura: requiereFactura,
@@ -311,11 +362,12 @@ const POSPage = () => {
     );
   }
 
-  const getProductImage = (prod: Producto) => {
-    return localStorage.getItem(`img_prod_${prod.id}`) || prod.imagen_url;
+  const getProductImage = (prod: any) => {
+    const prefix = prod.isCombo ? 'img_combo_' : 'img_prod_';
+    return localStorage.getItem(`${prefix}${prod.id}`) || prod.imagen_url;
   };
 
-  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, prodId: number) => {
+  const handleImageUpload = (e: React.ChangeEvent<HTMLInputElement>, prod: any) => {
     const file = e.target.files?.[0];
     if (file) {
       const reader = new FileReader();
@@ -343,8 +395,13 @@ const POSPage = () => {
           ctx?.drawImage(img, 0, 0, width, height);
           const compressedBase64 = canvas.toDataURL('image/webp', 0.8);
           try {
-            localStorage.setItem(`img_prod_${prodId}`, compressedBase64);
-            setProductos([...productos]); 
+            const prefix = prod.isCombo ? 'img_combo_' : 'img_prod_';
+            localStorage.setItem(`${prefix}${prod.id}`, compressedBase64);
+            if (prod.isCombo) {
+                setCombos([...combos]);
+            } else {
+                setProductos([...productos]); 
+            }
           } catch (error) {
             alert("Memoria insuficiente para subir más imágenes localmente.");
           }
@@ -355,10 +412,22 @@ const POSPage = () => {
     }
   };
 
-  const filteredProds = productos.filter(p => {
-    const matchesCat = selectedCat === 'all' || p.id_categoria === selectedCat;
-    const matchesSearch = p.nombre.toLowerCase().includes(search.toLowerCase());
-    return matchesCat && matchesSearch;
+  const filteredProds = [
+    ...productos.map(p => ({ ...p, isCombo: false })),
+    ...combos.map(c => ({ ...c, isCombo: true }))
+  ].filter(item => {
+    // Ocultar items inactivos (por ejemplo, combos con estado 0 o false)
+    if (item.isCombo && (item.estado === false || Number(item.estado) === 0)) return false;
+
+    // Si la búsqueda por texto no coincide, descartar inmediatamente
+    if (search && !item.nombre.toLowerCase().includes(search.toLowerCase())) return false;
+    
+    // Filtrado por categoría
+    if (selectedCat === 'all') return true;
+    if (selectedCat === 'combos') return item.isCombo;
+    if (item.isCombo) return false; // Si no es "todos" ni "combos", los combos no se muestran
+    
+    return Number(item.id_categoria) === Number(selectedCat);
   });
 
   return (
@@ -380,6 +449,7 @@ const POSPage = () => {
 
           <div className="flex gap-2 overflow-x-auto pb-2 scrollbar-hide">
             <button onClick={() => setSelectedCat('all')} className={`shrink-0 px-4 lg:px-6 py-2 lg:py-3 rounded-xl lg:rounded-2xl text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all ${selectedCat === 'all' ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-white text-gray-400 border border-gray-100 hover:border-gray-200'}`}>Todos</button>
+            <button onClick={() => setSelectedCat('combos')} className={`shrink-0 px-4 lg:px-6 py-2 lg:py-3 rounded-xl lg:rounded-2xl text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all flex items-center gap-2 ${selectedCat === 'combos' ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-white text-gray-400 border border-gray-100 hover:border-gray-200'}`}><Gift size={14}/> Combos</button>
             {categorias.map(cat => (
               <button key={cat.id} onClick={() => setSelectedCat(cat.id)} className={`shrink-0 px-4 lg:px-6 py-2 lg:py-3 rounded-xl lg:rounded-2xl text-[10px] lg:text-xs font-black uppercase tracking-widest transition-all ${selectedCat === cat.id ? 'bg-orange-500 text-white shadow-lg shadow-orange-100' : 'bg-white text-gray-400 border border-gray-100 hover:border-gray-200'}`}>{cat.nombre}</button>
             ))}
@@ -393,7 +463,7 @@ const POSPage = () => {
               return (
                 <motion.div key={prod.id} whileTap={{ scale: 0.96 }} onClick={() => addToCart(prod)} className="bg-white p-3 lg:p-4 rounded-2xl lg:rounded-[32px] border-2 border-transparent hover:border-orange-200 shadow-sm hover:shadow-xl transition-all cursor-pointer group relative overflow-hidden flex flex-col h-full">
                   <div className="aspect-square bg-gray-50 rounded-xl lg:rounded-2xl mb-3 lg:mb-4 overflow-hidden relative group/img">
-                    {currentImg ? <img src={currentImg} alt={prod.nombre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-gray-300"><Utensils size={32} className="lg:w-10 lg:h-10"/></div>}
+                    {currentImg ? <img src={currentImg} alt={prod.nombre} className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-700" /> : <div className="w-full h-full flex items-center justify-center text-gray-300">{prod.isCombo ? <Gift size={32} className="lg:w-10 lg:h-10 text-orange-400"/> : <Utensils size={32} className="lg:w-10 lg:h-10"/>}</div>}
                     
                     <div 
                       className="absolute inset-0 bg-black/40 flex items-center justify-center opacity-0 group-hover/img:opacity-100 transition-opacity"
@@ -402,7 +472,7 @@ const POSPage = () => {
                       <label className="cursor-pointer bg-white text-gray-900 p-2 lg:p-3 rounded-lg lg:rounded-xl shadow-xl flex items-center gap-1 lg:gap-2 hover:bg-orange-50 transition-colors">
                         <Camera size={16} className="text-orange-500 lg:w-[18px] lg:h-[18px]" />
                         <span className="text-[10px] lg:text-xs font-black uppercase">Subir Foto</span>
-                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, prod.id)} />
+                        <input type="file" accept="image/*" className="hidden" onChange={(e) => handleImageUpload(e, prod)} />
                       </label>
                     </div>
 
@@ -441,22 +511,36 @@ const POSPage = () => {
                 </div>
             ) : (
                 <AnimatePresence initial={false}>
-                    {cart.map((item: any) => {
+                    {calculatedCart.map((item: any) => {
                         const currentImg = getProductImage(item);
                         return (
-                        <motion.div key={item.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl group">
-                            <div className="w-12 h-12 bg-white rounded-lg border border-gray-100 shrink-0 overflow-hidden">
-                                {currentImg ? <img src={currentImg} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-200"><Utensils size={14}/></div>}
+                        <motion.div key={item.id} initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="flex items-center gap-3 bg-gray-50 p-3 rounded-2xl group relative overflow-hidden">
+                            {item.descuento_aplicado && (
+                                <div className="absolute top-0 left-0 right-0 bg-green-500 text-white text-[8px] font-black uppercase text-center py-0.5 z-10">
+                                    {item.descuento_aplicado}
+                                </div>
+                            )}
+                            <div className={`w-12 h-12 bg-white rounded-lg border border-gray-100 shrink-0 overflow-hidden ${item.descuento_aplicado ? 'mt-3' : ''}`}>
+                                {currentImg ? <img src={currentImg} className="w-full h-full object-cover" /> : <div className="w-full h-full flex items-center justify-center text-gray-200">{item.isCombo ? <Gift size={14} className="text-orange-400"/> : <Utensils size={14}/>}</div>}
                             </div>
-                            <div className="flex-1 min-w-0">
+                            <div className={`flex-1 min-w-0 ${item.descuento_aplicado ? 'mt-3' : ''}`}>
                                 <h4 className="text-[10px] font-black text-gray-900 truncate uppercase mb-1">{item.nombre}</h4>
-                                <p className="text-[10px] font-bold text-orange-500">Bs. {(Number(item.precio_venta) * item.cantidad).toFixed(2)}</p>
+                                <div className="flex flex-col">
+                                    {item.descuento_aplicado ? (
+                                        <>
+                                            <span className="text-[8px] font-bold text-gray-400 line-through">Bs. {(Number(item.precio_venta) * item.cantidad).toFixed(2)}</span>
+                                            <span className="text-[10px] font-bold text-green-500">Bs. {item.subtotal.toFixed(2)}</span>
+                                        </>
+                                    ) : (
+                                        <p className="text-[10px] font-bold text-orange-500">Bs. {item.subtotal.toFixed(2)}</p>
+                                    )}
+                                </div>
                             </div>
                             <div className="flex items-center gap-2">
-                                <button onClick={() => updateQty(item.id, -1)} className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 shadow-sm transition-all"><Minus size={12}/></button>
+                                <button onClick={() => updateQty(item.id, !!item.isCombo, -1)} className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-red-500 shadow-sm transition-all"><Minus size={12}/></button>
                                 <span className="text-xs font-black w-4 text-center">{item.cantidad}</span>
-                                <button onClick={() => updateQty(item.id, 1)} className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 shadow-sm transition-all"><Plus size={12}/></button>
-                                <button onClick={() => removeFromCart(item.id)} className="ml-1 p-1 text-gray-300 hover:text-red-500 transition-colors">
+                                <button onClick={() => updateQty(item.id, !!item.isCombo, 1)} className="w-7 h-7 rounded-lg bg-white border border-gray-200 flex items-center justify-center text-gray-400 hover:text-gray-900 shadow-sm transition-all"><Plus size={12}/></button>
+                                <button onClick={() => removeFromCart(item.id, !!item.isCombo)} className="ml-1 p-1 text-gray-300 hover:text-red-500 transition-colors">
                                     <Trash2 size={14} />
                                 </button>
                             </div>
@@ -488,10 +572,13 @@ const POSPage = () => {
                           <span className="md:hidden text-[10px] text-gray-400 bg-gray-200 px-2 py-0.5 rounded-full">{cart.length} items</span>
                         </h3>
                         <div className="flex-1 overflow-y-auto space-y-3 pr-2">
-                            {cart.map(i => (
+                            {calculatedCart.map(i => (
                                 <div key={i.id} className="flex justify-between text-[10px] font-bold text-gray-600">
-                                    <span className="truncate pr-4">{i.cantidad}x {i.nombre}</span>
-                                    <span className="shrink-0">{(i.cantidad * Number(i.precio_venta)).toFixed(2)}</span>
+                                    <span className="truncate pr-4">
+                                        {i.cantidad}x {i.nombre} 
+                                        {i.descuento_aplicado && <span className="text-green-500 ml-1">({i.descuento_aplicado})</span>}
+                                    </span>
+                                    <span className="shrink-0">{i.subtotal.toFixed(2)}</span>
                                 </div>
                             ))}
                         </div>

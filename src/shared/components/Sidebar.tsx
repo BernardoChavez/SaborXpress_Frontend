@@ -25,7 +25,10 @@ import {
   Key,
   FileText,
   Database,
-  Star
+  Star,
+  Tag,
+  Percent,
+  Gift
 } from 'lucide-react';
 import { useAuthStore } from '../../core/store/useAuthStore';
 import type { TipoUsuario } from '../../core/types/auth.types';
@@ -152,6 +155,15 @@ const adminStructure: MenuItem[] = [
     items: [
       { label: 'Mapa de Mesas', to: '/admin/mesas', icon: <LayoutDashboard size={18} />, permission: 'CU16:ver' }, // Using CU16 as temporary since CU37 isn't seeded
       { label: 'Reseñas', to: '/admin/resenas', icon: <Star size={18} />, permission: 'CU16:ver' }
+    ]
+  },
+  {
+    type: 'group',
+    label: 'P10: Combos & Promos',
+    icon: <Gift size={20} />,
+    items: [
+      { label: 'Gestión de Combos', to: '/admin/combos', icon: <Package size={18} />, permission: 'CU16:ver' },
+      { label: 'Promociones', to: '/admin/promociones', icon: <Percent size={18} />, permission: 'CU16:ver' }
     ]
   }
 ];
