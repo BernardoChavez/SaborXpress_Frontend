@@ -159,8 +159,9 @@ export const AlertasPage = () => {
             alert('¡Correo reenviado exitosamente a través del servidor!');
             fetchAlertas();
             fetchHistorial();
-        } catch (error) {
-            alert('Error al reenviar correo. Verifique sus credenciales SMTP y el destinatario.');
+        } catch (error: any) {
+            const errorMsg = error?.response?.data?.message || error?.message || 'Verifique sus credenciales SMTP y el destinatario.';
+            alert('Error al reenviar correo: \n\n' + errorMsg);
         } finally {
             setResendingId(null);
         }
