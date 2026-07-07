@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Button, Spinner, Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from '@nextui-org/react';
-import { LayoutGrid, CloudSun, Users, CheckCircle2, Clock, Plus, Trash2, ArrowUpDown } from 'lucide-react';
+import { LayoutGrid, CloudSun, Users, CheckCircle2, Clock, Plus, Trash2 } from 'lucide-react';
 import api from '../../../api/axios';
 
 // Componente para dibujar la mesa con sus sillas

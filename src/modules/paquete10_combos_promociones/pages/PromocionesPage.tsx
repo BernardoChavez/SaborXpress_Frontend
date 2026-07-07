@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Card, CardBody, Button, Table, TableHeader, TableColumn, TableBody, TableRow, TableCell, Chip } from '@nextui-org/react';
 import { Plus, Percent, Trash2, Edit2 } from 'lucide-react';
 import { marketingApi } from '../../../api/services/marketingService';

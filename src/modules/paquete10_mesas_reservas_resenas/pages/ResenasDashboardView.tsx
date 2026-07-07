@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
-import { Card, CardBody, Button, Spinner, Chip } from '@nextui-org/react';
-import { Star, MessageSquare, TrendingUp, Award, ThumbsUp, Filter, Calendar, CheckCircle2, Clock, Eye, EyeOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { Button, Spinner, Chip } from '@nextui-org/react';
+import { Star, MessageSquare, TrendingUp, Award, Filter, Calendar, Eye, EyeOff } from 'lucide-react';
 import api from '../../../api/axios';
 
 export const ResenasDashboardView = () => {

@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { X, Gift, Package, DollarSign, Loader2, Plus, Trash2 } from 'lucide-react';
+import { X, Gift, Package, Loader2, Plus, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { productoService } from '../../paquete3_configuracion/catalogo/catalogoService';
 

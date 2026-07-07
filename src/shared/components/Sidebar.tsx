@@ -26,7 +26,6 @@ import {
   FileText,
   Database,
   Star,
-  Tag,
   Percent,
   Gift
 } from 'lucide-react';

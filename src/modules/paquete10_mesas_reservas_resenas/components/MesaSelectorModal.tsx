@@ -1,6 +1,6 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, Button, Spinner } from '@nextui-org/react';
-import { LayoutGrid, CloudSun, CheckCircle2, MapPin, Users, XCircle } from 'lucide-react';
+import { LayoutGrid, CloudSun, CheckCircle2, MapPin } from 'lucide-react';
 import api from '../../../api/axios';
 
 export interface SelectedMesaInfo {

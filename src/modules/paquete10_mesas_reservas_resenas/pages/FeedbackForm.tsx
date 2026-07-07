@@ -1,12 +1,11 @@
-import React, { useState } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
-import { Button, Spinner } from '@nextui-org/react';
+import { useState } from 'react';
+import { useParams } from 'react-router-dom';
+import { Button } from '@nextui-org/react';
 import { Star, CheckCircle2, Utensils, Heart, Sparkles, MessageSquareQuote, ArrowRight } from 'lucide-react';
 import api from '../../../api/axios';
 
 export const FeedbackForm = () => {
   const { id } = useParams();
-  const navigate = useNavigate();
   const [rating, setRating] = useState(0);
   const [hover, setHover] = useState(0);
   const [comentario, setComentario] = useState('');
